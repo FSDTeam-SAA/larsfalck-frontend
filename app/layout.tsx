@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Wix_Madefor_Text } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { Toaster } from "@/components/ui/sonner";
+import AuthProvider from "@/components/providers/AuthProvider";
+import AppProvider from "@/components/providers/AppProvider";
 
 
 const wixMadeforText = Wix_Madefor_Text({
@@ -23,7 +26,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn("font-sans")}>
       <body className={`${wixMadeforText.className} overflow-hidden bg-[#0e0e0e] antialiased`}>
-        {children}
+       <AuthProvider>
+          <AppProvider>
+            {children}
+
+            <Toaster />
+          </AppProvider>
+        </AuthProvider>
       </body>
     </html>
   );
