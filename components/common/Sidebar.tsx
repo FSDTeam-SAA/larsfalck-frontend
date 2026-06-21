@@ -29,7 +29,9 @@ function SidebarContent() {
     <ScrollArea className="h-full">
       <div className="mt-5 flex flex-col gap-3 p-3">
         {navItems.map((item) => {
-          const active = pathname === item.href;
+          const active =
+            pathname === item.href ||
+            (item.href === "/playlists" && pathname.startsWith("/playlists/"));
           return (
             <Link key={item.href} href={item.href}>
               <Button

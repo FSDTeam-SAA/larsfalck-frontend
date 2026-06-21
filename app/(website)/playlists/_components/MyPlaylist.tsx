@@ -1,6 +1,5 @@
-import Link from "next/link";
-
 import MusicCard from "@/components/common/MusicCard";
+import { CreatePlaylistModal } from "./CreatePlaylistModal";
 
 const songs = [
   {
@@ -35,20 +34,16 @@ const songs = [
   },
 ];
 
-export function Recommended() {
+export function MyPlaylist() {
   return (
     <section className="px-3 py-5 sm:px-6 sm:py-6">
       <div className="mb-4 flex items-center justify-between sm:mb-7">
         <h2 className="text-xl font-semibold text-[#FFFFFF] sm:text-3xl lg:text-4xl">
-        Recommended for you
+          Playlists
         </h2>
-        <Link
-          href="/songs"
-          className="text-sm font-medium text-[#A8A8A8] hover:text-white sm:text-lg"
-        >
-          Show all
-        </Link>
+        <CreatePlaylistModal />
       </div>
+      <h3 className="text-white text-xl mb-3">My Playlists</h3>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {songs.map((song) => (
