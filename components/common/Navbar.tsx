@@ -64,10 +64,12 @@ export function Navbar() {
           <Bell className="!h-[24px] !w-[24px]" />
         </Button>
 
+        <Link href="/profiles">
         <Avatar className="h-10 w-10 cursor-pointer sm:h-9 sm:w-9">
           <AvatarImage src="/avatar.jpg" alt="User" />
           <AvatarFallback>U</AvatarFallback>
         </Avatar>
+        </Link>
 
         {/* Mobile menu (home + search go here below md) */}
         <Sheet>
