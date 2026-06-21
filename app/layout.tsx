@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { Wix_Madefor_Text } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { Toaster } from "@/components/ui/sonner";
+import AuthProvider from "@/components/providers/AuthProvider";
+import AppProvider from "@/components/providers/AppProvider";
 import NextTopLoader from "nextjs-toploader";
-
 
 const wixMadeforText = Wix_Madefor_Text({
   subsets: ["latin"],
@@ -23,9 +25,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn("font-sans")}>
-      <body className={`${wixMadeforText.className} overflow-hidden bg-[#0e0e0e] antialiased`}>
-          <NextTopLoader color="#0B5CFF" height={3} showSpinner={false} />
-        {children}
+      <body
+        className={`${wixMadeforText.className} overflow-hidden bg-[#0e0e0e] antialiased`}
+      >
+        <NextTopLoader color="#00EF01" height={3} showSpinner={false} />
+        <AuthProvider>
+          <AppProvider>
+            {children}
+
+            <Toaster />
+          </AppProvider>
+        </AuthProvider>
       </body>
     </html>
   );
