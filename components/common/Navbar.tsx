@@ -7,33 +7,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import Image from "next/image";
+import Link from "next/link";
 
 export function Navbar() {
   return (
     <header className="sticky top-0 !z-50 mt-3 flex h-16 w-full mx-auto rounded-[12px] items-center justify-between gap-3 border-b border-white/5 bg-[#FFFFFF]/10 pl-16 pr-3 sm:h-[82px] sm:px-8 lg:h-[94px] lg:px-12">
       {/* Logo */}
-      <div className="flex shrink-0 items-center gap-2">
-        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#1ed760] sm:h-8 sm:w-8">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            className="h-4 w-4 text-black sm:h-5 sm:w-5"
-          >
-            <path
-              d="M4 8a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8Z"
-              fill="currentColor"
-            />
-          </svg>
-        </div>
-        <div className="hidden leading-tight sm:flex sm:flex-col">
-          <span className="text-[11px] font-bold uppercase tracking-wide text-white">
-            Beatboks<span className="text-[#1ed760]">.com</span>
-          </span>
-          <span className="text-[8px] uppercase tracking-wider text-zinc-500">
-            Soundtrack Your Album
-          </span>
-        </div>
+      <Link href="/">
+      <div className="w-[157px] h-14">
+        <Image
+          src="/logo.png"
+          alt="Logo"
+          width={1000}
+          height={1000}
+          className="h-full w-full object-cover"
+        />
       </div>
+      </Link>
 
       {/* Center: home + search (desktop) */}
       <div className="hidden flex-1 items-center justify-center gap-3 md:flex">
