@@ -40,7 +40,7 @@ const ForgotPasswordForm = () => {
   const {mutate, isPending} = useMutation({
     mutationKey: ["forgot-password"],
     mutationFn : async (values:{email:string})=>{
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/forgot-password`,{
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/forget-password`,{
         method : "POST",
         headers: {
           "Content-Type" : "application/json"
