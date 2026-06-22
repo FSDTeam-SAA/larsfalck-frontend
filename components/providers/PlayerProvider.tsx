@@ -38,6 +38,7 @@ type PlayerContextValue = {
   toggleMute: () => void;
   toggleShuffle: () => void;
   cycleRepeat: () => void;
+  resetPlayer: () => void;
 };
 
 const PlayerContext = React.createContext<PlayerContextValue | null>(null);
@@ -275,6 +276,24 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const resetPlayer = React.useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+    }
+
+    setQueue([]);
+    setOrder([]);
+    setQueuePosition(0);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setIsShuffle(false);
+    setRepeatMode("off");
+  }, []);
+
   const handleEnded = React.useCallback(() => {
     const audio = audioRef.current;
 
@@ -323,6 +342,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       toggleMute,
       toggleShuffle,
       cycleRepeat,
+      resetPlayer,
     }),
     [
       currentTime,
@@ -337,6 +357,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       playQueue,
       queue,
       repeatMode,
+      resetPlayer,
       seek,
       toggleMute,
       togglePlay,
