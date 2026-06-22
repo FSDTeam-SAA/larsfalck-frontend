@@ -1,4 +1,4 @@
-// components/player-bar.tsx
+
 "use client";
 
 import * as React from "react";
@@ -26,14 +26,14 @@ type Track = {
   artist: string;
   image: string;
   src: string;
-  duration: number; // seconds, used as fallback before metadata loads
+  duration: number; 
 };
 
 const playlist: Track[] = [
   {
     title: "Morning Serenity",
     artist: "Lars Falck • Piano Collection...",
-    image: "/songs/morning-serenity.jpg",
+    image: "/albam.png",
     src: "/audio/morning-serenity.mp3",
     duration: 176,
   },
@@ -201,8 +201,8 @@ export function Footer() {
             <Image src={track.image} alt={track.title} fill className="object-cover" />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-white">{track.title}</p>
-            <p className="truncate text-xs text-zinc-400">{track.artist}</p>
+            <p className="truncate text-base font-semibold text-white">{track.title}</p>
+            <p className="truncate text-xs text-[#A8A8A8]">{track.artist}</p>
           </div>
           <button
             type="button"

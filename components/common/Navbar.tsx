@@ -53,6 +53,7 @@ export function Navbar() {
 
       {/* Desktop search */}
       <div className="hidden flex-1 items-center justify-center gap-3 md:flex">
+        <Link href="/">
         <Button
           size="icon"
           aria-label="Home"
@@ -60,7 +61,7 @@ export function Navbar() {
         >
           <Home className="size-5" />
         </Button>
-
+        </Link>
         <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
           <Input
