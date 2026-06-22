@@ -134,10 +134,12 @@ export function Navbar() {
           <Bell className="size-6" />
         </Button>
 
-        <Avatar className="size-10 cursor-pointer sm:size-9">
+        <Link href="/profiles">
+        <Avatar className="h-10 w-10 cursor-pointer sm:h-9 sm:w-9">
           <AvatarImage src="/avatar.jpg" alt="User" />
           <AvatarFallback>U</AvatarFallback>
         </Avatar>
+        </Link>
 
         <Button
           type="button"
