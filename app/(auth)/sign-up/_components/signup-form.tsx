@@ -164,8 +164,8 @@ const { mutate, isPending } = useMutation({
   }
 
   return (
-    <div>
-      <div className="w-full md:w-[537px] rounded-[12px] border border-[#333333] bg-white/10 p-5 md:p-6">
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-[537px] rounded-[12px] border border-[#333333] bg-white/10 p-4 sm:p-5 md:p-6 lg:my-auto">
         <div className="flex w-full items-center justify-center pb-5">
           <Link href="/">
             <Image
@@ -173,14 +173,14 @@ const { mutate, isPending } = useMutation({
               alt="auth logo"
               width={500}
               height={500}
-              className="h-60px] w-[180px] object-contain"
+              className="h-[60px] w-[180px] object-contain"
             />
           </Link>
         </div>
         <h3 className="text-2xl md:text-[32px] lg:text-[40px] font-bold text-[#F2F2F2] text-center leading-[120%] ">
           Create an account
         </h3>
-        <p className="text-base md:text-lg font-normal text-[#D7D7D7] leading-[150%] text-center pb-1">
+        <p className="px-2 text-sm font-normal leading-[150%] text-center text-[#D7D7D7] pb-1 sm:px-0 md:text-lg">
           Start your 14-day free trial. No credit card needed.
         </p>
         
@@ -188,7 +188,7 @@ const { mutate, isPending } = useMutation({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4 pt-6 "
+            className="space-y-4 pt-5 lg:pt-6"
           >
             <FormField
               control={form.control}
@@ -276,7 +276,7 @@ const { mutate, isPending } = useMutation({
 
                         {isGenreDropdownOpen ? (
                           <div className="absolute left-0 right-0 z-20 mt-2 rounded-[8px] border border-[#333333] bg-[#1F1F1F] p-2 shadow-lg">
-                            <div className="max-h-[240px] space-y-1 overflow-y-auto pr-1">
+                            <div className="max-h-[200px] space-y-1 overflow-y-auto pr-1 sm:max-h-[220px] lg:max-h-[180px] xl:max-h-[220px]">
                               {genreOptions.map((genre) => {
                                 const isSelected =
                                   selectedGenres.includes(genre);
@@ -401,7 +401,7 @@ const { mutate, isPending } = useMutation({
               control={form.control}
               name="rememberMe"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                <FormItem className="flex flex-row items-start gap-2 space-y-0">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
@@ -412,16 +412,16 @@ const { mutate, isPending } = useMutation({
                     />
                   </FormControl>
 
-                  <Label className="text-[#E8E8E8] text-sm font-medium leading-[120%]">
+                  <Label className="text-[#E8E8E8] text-[13px] md:text-sm font-medium leading-[150%]">
                     I agree to the{" "}
                     <Link href="#">
-                    <span className="text-primary">
+                    <span className="text-primary underline-offset-2 hover:underline">
                     terms & conditions  
                     </span>
                     </Link>
-                    and
+                    {" "}and{" "}
                     <Link href="#">
-                    <span className="text-primary">
+                    <span className="text-primary underline-offset-2 hover:underline">
                       privacy policy 
                     </span>
                     </Link>
@@ -430,14 +430,14 @@ const { mutate, isPending } = useMutation({
               )}
             />
 
-            <div className="pt-2">
+            <div className="pt-1 md:pt-2">
               <Button disabled={isPending} className="h-[48px] w-full rounded-[8px] font-medium text-[#333333]" type="submit">
                 {isPending ? "Creating..." : "Create Account"}
               </Button>
             </div>
 
-            <p className="text-sm text-[#E6FDE6] font-medium text-center pt-2 leading-[120%]">
-              Already have an account? 
+            <p className="px-2 text-sm text-[#E6FDE6] font-medium text-center pt-0 md:pt-2 leading-[140%] sm:px-0">
+              Already have an account?{" "}
               <Link className="text-primary underline" href="/login">
                 Sign In
               </Link>
