@@ -6,29 +6,14 @@ import { z } from "zod";
 import Image from 'next/image'
 
 import { Button } from "@/components/ui/button";
-// Local lightweight fallbacks for form UI components in case
-// the shared ui/form module is not available in this environment.
-const Form: React.FC<any> = ({ children, ...props }) => (
-  // pass through react-hook-form object via props
-  <div {...props}>{children}</div>
-);
-
-const FormControl: React.FC<any> = ({ children }) => <div>{children}</div>;
-
-const FormField: React.FC<any> = ({ render, ...props }) => {
-  // The original component expects render={({ field }) => (...) }
-  // We simply forward render with a minimal field proxy when used.
-  const fieldProxy = { value: props?.defaultValue ?? undefined, onChange: (v: any) => v, name: props?.name };
-  return <>{render ? render({ field: fieldProxy }) : null}</>;
-};
-
-const FormItem: React.FC<any> = ({ children }) => <div>{children}</div>;
-
-const FormLabel: React.FC<any> = ({ children, ...props }) => (
-  <label {...props}>{children}</label>
-);
-
-const FormMessage: React.FC<any> = ({ children }) => <div>{children}</div>;
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
@@ -119,6 +104,7 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
                   </FormLabel>
                   <FormControl>
                     <Input
+                      type="email"
                       className="h-[48px] bg-[#333333] !rounded-[8px] text-base font-medium text-white py-3 px-4 border-none placeholder:text-[#787878]"
                       placeholder="Enter your email address..."
                       {...field}
@@ -147,13 +133,13 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
                       <button
                         type="button"
                         className="absolute right-4 top-1/2 -translate-y-1/2"
+                        onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <Eye className="text-[#979797]" onClick={() => setShowPassword(!showPassword)} />
+                          <Eye className="text-[#979797]" />
                         ) : (
                           <EyeOff
                           className="text-[#979797]"
-                            onClick={() => setShowPassword(!showPassword)}
                           />
                         )}
                       </button>

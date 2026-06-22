@@ -29,13 +29,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn("font-sans")}>
       <body
-        className={`${wixMadeforText.className} overflow-hidden bg-[#0e0e0e] antialiased`}
+        className={`${wixMadeforText.className} overflow-x-hidden bg-[#0e0e0e] antialiased`}
       >
         <NextTopLoader color="#00EF01" height={3} showSpinner={false} />
         <AuthProvider>
           <AppProvider>
             {children}
-
             <Toaster />
           </AppProvider>
         </AuthProvider>

@@ -36,7 +36,7 @@ const genreOptions = [
 
 const formSchema = z
   .object({
-    fullName: z
+    name: z
       .string()
       .min(2, { message: "Full name must be at least 2 characters." })
       .trim(),
@@ -77,7 +77,7 @@ const SignupForm = () => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullName: "",
+      name: "",
       email: "",
       preferredGenres: [],
       password: "",
@@ -107,7 +107,7 @@ const { mutate, isPending } = useMutation({
   mutationKey: ["signup"],
 
   mutationFn: async (values: {
-    fullName: string;
+    name: string;
     email: string;
     password: string;
     preferredGenres: string[];
@@ -155,7 +155,7 @@ const { mutate, isPending } = useMutation({
   async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
     const payload = {
-      fullName: values.fullName,
+      name: values.name,
       email : values.email,
       password : values.password,
       preferredGenres: values.preferredGenres,
@@ -192,7 +192,7 @@ const { mutate, isPending } = useMutation({
           >
             <FormField
               control={form.control}
-              name="fullName"
+              name="name"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-base font-semibold text-white leading-[120%]">
@@ -207,7 +207,7 @@ const { mutate, isPending } = useMutation({
                     />
                   </FormControl>
 
-                  <FormMessage />
+                  <FormMessage  className="text-red-500"/>
                 </FormItem>
               )}
             />
@@ -230,7 +230,7 @@ const { mutate, isPending } = useMutation({
                     />
                   </FormControl>
 
-                  <FormMessage />
+                  <FormMessage  className="text-red-500"/>
                 </FormItem>
               )}
             />
@@ -317,7 +317,7 @@ const { mutate, isPending } = useMutation({
                       </div>
                     </FormControl>
 
-                    <FormMessage />
+                    <FormMessage  className="text-red-500"/>
                   </FormItem>
                 );
               }}
@@ -355,7 +355,7 @@ const { mutate, isPending } = useMutation({
                     </div>
                   </FormControl>
 
-                  <FormMessage />
+                  <FormMessage  className="text-red-500"/>
                 </FormItem>
               )}
             />
@@ -392,7 +392,7 @@ const { mutate, isPending } = useMutation({
                     </div>
                   </FormControl>
 
-                  <FormMessage />
+                  <FormMessage  className="text-red-500"/>
                 </FormItem>
               )}
             />
