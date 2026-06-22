@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 type ArtistCardProps = {
+  id: string;
   name: string;
   image: string;
   albums: number;
@@ -9,19 +10,20 @@ type ArtistCardProps = {
 };
 
 export default function ArtistCard({
+  id,
   name,
   image,
   albums,
   songs,
 }: ArtistCardProps) {
   return (
-    <Link href={`/single-artists/${name}`}>
-    <div className="group cursor-pointer ">
-      <div className="relative aspect-[4/4.2] overflow-hidden rounded-xl ">
+    <Link href={`/single-artists/${id}`} className="group block min-w-0">
+      <div className="relative aspect-[4/4.2] overflow-hidden rounded-xl bg-white/5">
         <Image
-          src={image}
+          src={image || "/artis.png"}
           alt={name}
           fill
+          sizes="(min-width: 1280px) 16vw, (min-width: 768px) 25vw, 50vw"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
       </div>
@@ -35,7 +37,6 @@ export default function ArtistCard({
           {albums} Albums • {songs} Songs
         </p>
       </div>
-    </div>
     </Link>
   );
 }

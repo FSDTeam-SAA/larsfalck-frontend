@@ -1,7 +1,4 @@
-import { notFound } from "next/navigation";
-
-import { getAlbumBySlug } from "@/lib/albums";
-import { AlbumDetails } from "../_components/AlbumDetails";
+import AlbumDetailsClient from "../_components/AlbumDetailsClient";
 
 type AlbumPageProps = {
   params: {
@@ -10,9 +7,5 @@ type AlbumPageProps = {
 };
 
 export default function AlbumPage({ params }: AlbumPageProps) {
-  const album = getAlbumBySlug(params.id);
-
-  if (!album) notFound();
-
-  return <AlbumDetails album={album} />;
+  return <AlbumDetailsClient albumId={params.id} />;
 }
