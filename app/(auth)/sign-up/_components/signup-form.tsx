@@ -65,7 +65,7 @@ const SignupForm = () => {
       email: "",
       password: "",
       confirmPassword: "",
-      rememberMe: false,
+      rememberMe: true,
     },
   });
 
@@ -280,18 +280,23 @@ const { mutate, isPending } = useMutation({
                       onCheckedChange={(checked) =>
                         field.onChange(checked === true)
                       }
+                       className="data-[state=checked]:bg-primary data-[state=checked]:text-white border-primary"
                     />
                   </FormControl>
 
                   <Label className="text-[#E8E8E8] text-sm font-medium leading-[120%]">
                     I agree to the{" "}
+                    <Link href="#">
                     <span className="text-primary">
                     terms & conditions  
                     </span>
+                    </Link>
                     and
+                    <Link href="#">
                     <span className="text-primary">
                       privacy policy 
                     </span>
+                    </Link>
                   </Label>
                 </FormItem>
               )}
