@@ -6,29 +6,14 @@ import { z } from "zod";
 import Image from 'next/image'
 
 import { Button } from "@/components/ui/button";
-// Local lightweight fallbacks for form UI components in case
-// the shared ui/form module is not available in this environment.
-const Form: React.FC<any> = ({ children, ...props }) => (
-  // pass through react-hook-form object via props
-  <div {...props}>{children}</div>
-);
-
-const FormControl: React.FC<any> = ({ children }) => <div>{children}</div>;
-
-const FormField: React.FC<any> = ({ render, ...props }) => {
-  // The original component expects render={({ field }) => (...) }
-  // We simply forward render with a minimal field proxy when used.
-  const fieldProxy = { value: props?.defaultValue ?? undefined, onChange: (v: any) => v, name: props?.name };
-  return <>{render ? render({ field: fieldProxy }) : null}</>;
-};
-
-const FormItem: React.FC<any> = ({ children }) => <div>{children}</div>;
-
-const FormLabel: React.FC<any> = ({ children, ...props }) => (
-  <label {...props}>{children}</label>
-);
-
-const FormMessage: React.FC<any> = ({ children }) => <div>{children}</div>;
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
@@ -90,8 +75,8 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
   }
 }
   return (
-    <div>
-     <div className="w-full md:w-[537px] rounded-[12px] border border-[#333333] bg-white/10 p-5 md:p-6">
+    <div className="w-full">
+     <div className="mx-auto w-full max-w-[537px] rounded-[12px] border border-[#333333] bg-white/10 p-4 sm:p-5 md:p-6">
         <div className="w-full flex items-center justify-center pb-5 md:pb-6">
           <Link href="/">
             <Image src="/auth_logo.png" alt="auth logo" width={500} height={500} className="w-[180px] h-[60px] object-contain" />
@@ -101,13 +86,13 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
         <h3 className="text-2xl md:text-[32px] lg:text-[40px] font-bold text-[#F2F2F2] text-center leading-[120%] ">
           Welcome Back!
         </h3>
-        <p className="text-base md:text-lg font-normal text-[#D7D7D7] leading-[150%] text-center pt-2">
+        <p className="px-2 text-sm font-normal leading-[150%] text-center text-[#D7D7D7] pt-2 sm:px-0 md:text-lg">
           Sign in to your Beatboks account
         </p>
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4 pt-5 md:pt- lg:pt-8"
+            className="space-y-4 pt-5 lg:pt-8"
           >
             <FormField
               control={form.control}
@@ -119,6 +104,7 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
                   </FormLabel>
                   <FormControl>
                     <Input
+                      type="email"
                       className="h-[48px] bg-[#333333] !rounded-[8px] text-base font-medium text-white py-3 px-4 border-none placeholder:text-[#787878]"
                       placeholder="Enter your email address..."
                       {...field}
@@ -146,14 +132,14 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
                       />
                       <button
                         type="button"
-                        className="absolute top-3.5 right-4"
+                        className="absolute right-4 top-1/2 -translate-y-1/2"
+                        onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <Eye className="text-[#979797]" onClick={() => setShowPassword(!showPassword)} />
+                          <Eye className="text-[#979797]" />
                         ) : (
                           <EyeOff
                           className="text-[#979797]"
-                            onClick={() => setShowPassword(!showPassword)}
                           />
                         )}
                       </button>
@@ -168,7 +154,7 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
               control={form.control}
               name="rememberMe"
               render={({ field }: { field: any }) => (
-                <div className="w-full flex items-center justify-between">
+                <div className="flex w-full gap-3 items-center justify-between">
                   <FormItem >
                    <div className="flex items-center gap-[10px]">
                      <FormControl className="mt-1">
@@ -188,7 +174,7 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
                    </div>
                     <FormMessage className="text-red-500" />
                   </FormItem>
-                 <div>
+                 <div className="sm:text-right">
                    <Link
                     className="text-sm font-medium text-primary cursor-pointer leading-[120%] hover:underline"
                     href="/forgot-password"
@@ -209,7 +195,7 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
                 {isLoading ? "Sign In ..." : "Sign In"}
               </Button>
             </div>
-              <p className="text-sm text-[#E6FDE6] font-medium text-center pt-2 leading-[120%] ">Don’t have an account? <Link className="text-primary underline" href="/sign-up">Register Here</Link></p>
+              <p className="px-2 text-sm text-[#E6FDE6] font-medium text-center pt-2 leading-[140%] sm:px-0">Don’t have an account? <Link className="text-primary underline" href="/sign-up">Register Here</Link></p>
           </form>
         </Form>
       </div>
