@@ -20,19 +20,26 @@ import {
 import { Input } from "../../../../components/ui/input";
 import { Checkbox } from "../../../../components/ui/checkbox";
 import { Label } from "../../../../components/ui/label";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-const genreOptions = [
-  "Indie Pop",
-  "Electronic Pop",
-  "K-Pop Pop",
-  "Chillwave",
-  "Synthwave",
-  "Ambient",
-  "J-Pop",
-] as const;
+type Genre = {
+  _id: string;
+  name: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  songCount: number;
+};
+
+type GenresResponse = {
+  success: boolean;
+  message: string;
+  data?: {
+    genres?: Genre[];
+  };
+};
 
 const formSchema = z
   .object({
@@ -67,12 +74,32 @@ const formSchema = z
 
 type FormValues = z.infer<typeof formSchema>;
 
+async function getGenres(): Promise<Genre[]> {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/genre`);
+  const result = (await response.json()) as GenresResponse;
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || "Could not load genres");
+  }
+
+  return result.data?.genres ?? [];
+}
+
 const SignupForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [confirmShowPassword, setConfirmShowPassword] = useState(false);
   const [isGenreDropdownOpen, setIsGenreDropdownOpen] = useState(false);
   const router = useRouter();
   const genreDropdownRef = useRef<HTMLDivElement | null>(null);
+  const {
+    data: genres = [],
+    isPending: isGenresPending,
+    isError: isGenresError,
+  } = useQuery({
+    queryKey: ["genres"],
+    queryFn: getGenres,
+    staleTime: 1000 * 60 * 5,
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -103,64 +130,64 @@ const SignupForm = () => {
     };
   }, []);
 
-const { mutate, isPending } = useMutation({
-  mutationKey: ["signup"],
+  const { mutate, isPending } = useMutation({
+    mutationKey: ["signup"],
 
-  mutationFn: async (values: {
-    name: string;
-    email: string;
-    password: string;
-    preferredGenres: string[];
-  }) => {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/register`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    mutationFn: async (values: {
+      name: string;
+      email: string;
+      password: string;
+      preferredGenres: string[];
+    }) => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(values),
         },
-        body: JSON.stringify(values),
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Registration failed");
       }
-    );
 
-    const data = await res.json();
+      return data;
+    },
 
-    if (!res.ok) {
-      throw new Error(data?.message || "Registration failed");
-    }
+    onSuccess: (data) => {
+      if (!data?.success) {
+        toast.error(data?.message || "Something went wrong!");
+        return;
+      }
 
-    return data;
-  },
+      toast.success(data?.message || "Registration successful");
 
-  onSuccess: (data) => {
-    if (!data?.success) {
-      toast.error(data?.message || "Something went wrong!");
-      return;
-    }
+      form.reset();
 
-    toast.success(data?.message || "Registration successful");
+      setTimeout(() => {
+        router.push("/login");
+      }, 1200);
+    },
 
-    form.reset();
+    onError: (error: Error) => {
+      toast.error(error.message || "Something went wrong");
+    },
+  });
 
-    setTimeout(() => {
-      router.push("/login");
-    }, 1200);
-  },
-
-  onError: (error: Error) => {
-    toast.error(error.message || "Something went wrong");
-  },
-});
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+  function onSubmit(values: z.infer<typeof formSchema>) {
     const payload = {
       name: values.name,
-      email : values.email,
-      password : values.password,
+      email: values.email,
+      password: values.password,
       preferredGenres: values.preferredGenres,
-    }
-    mutate(payload)
+    };
+
+    mutate(payload);
   }
 
   return (
@@ -240,6 +267,13 @@ const { mutate, isPending } = useMutation({
               name="preferredGenres"
               render={({ field }) => {
                 const selectedGenres = field.value ?? [];
+                const selectedGenreNames = selectedGenres
+                  .map(
+                    (genreId) =>
+                      genres.find((genre) => genre._id === genreId)?.name,
+                  )
+                  .filter(Boolean)
+                  .join(", ");
 
                 return (
                   <FormItem>
@@ -264,8 +298,10 @@ const { mutate, isPending } = useMutation({
                             }
                           >
                             {selectedGenres.length > 0
-                              ? selectedGenres.join(", ")
-                              : "Select"}
+                              ? selectedGenreNames
+                              : isGenresPending
+                                ? "Loading genres..."
+                                : "Select"}
                           </span>
                           <ChevronDown
                             className={`h-4 w-4 text-[#979797] transition-transform ${
@@ -277,13 +313,33 @@ const { mutate, isPending } = useMutation({
                         {isGenreDropdownOpen ? (
                           <div className="absolute left-0 right-0 z-20 mt-2 rounded-[8px] border border-[#333333] bg-[#1F1F1F] p-2 shadow-lg">
                             <div className="max-h-[200px] space-y-1 overflow-y-auto pr-1 sm:max-h-[220px] lg:max-h-[180px] xl:max-h-[220px]">
-                              {genreOptions.map((genre) => {
+                              {isGenresPending ? (
+                                <p className="px-2 py-2 text-sm text-[#A8A8A8]">
+                                  Loading genres...
+                                </p>
+                              ) : null}
+
+                              {isGenresError ? (
+                                <p className="px-2 py-2 text-sm text-red-400">
+                                  Unable to load genres.
+                                </p>
+                              ) : null}
+
+                              {!isGenresPending &&
+                              !isGenresError &&
+                              genres.length === 0 ? (
+                                <p className="px-2 py-2 text-sm text-[#A8A8A8]">
+                                  No genres available.
+                                </p>
+                              ) : null}
+
+                              {genres.map((genre) => {
                                 const isSelected =
-                                  selectedGenres.includes(genre);
+                                  selectedGenres.includes(genre._id);
 
                                 return (
                                   <label
-                                    key={genre}
+                                    key={genre._id}
                                     className="flex cursor-pointer items-center gap-3 rounded-[6px] px-2 py-2 text-[#D7D7D7] transition-colors hover:bg-white/5"
                                   >
                                     <Checkbox
@@ -292,21 +348,21 @@ const { mutate, isPending } = useMutation({
                                         if (checked === true) {
                                           field.onChange([
                                             ...selectedGenres,
-                                            genre,
+                                            genre._id,
                                           ]);
                                           return;
                                         }
 
                                         field.onChange(
                                           selectedGenres.filter(
-                                            (item) => item !== genre
+                                            (item) => item !== genre._id
                                           )
                                         );
                                       }}
                                       className="border-[#6F6F6F] data-[state=checked]:border-primary data-[state=checked]:bg-[#E6E6E6] data-[state=checked]:text-black"
                                     />
                                     <span className="text-base leading-[120%]">
-                                      {genre}
+                                      {genre.name}
                                     </span>
                                   </label>
                                 );
