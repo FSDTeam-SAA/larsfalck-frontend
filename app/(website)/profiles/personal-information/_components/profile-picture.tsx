@@ -27,14 +27,22 @@ const ProfilePicture = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data } = useQuery<UserApiResponse>({
-    queryKey: ["profile-img"],
-    queryFn: () =>
-      fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/profile`, {
+    queryKey: ["user-me"],
+    queryFn: async () => {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/me`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      }).then((res) => res.json()),
+      });
+      const result = (await res.json()) as UserApiResponse;
+
+      if (!res.ok || !result.success) {
+        throw new Error(result.message || "Failed to load user profile");
+      }
+
+      return result;
+    },
     enabled: !!token,
   });
 
@@ -42,7 +50,7 @@ const ProfilePicture = () => {
     mutationKey: ["update-profile-image"],
     mutationFn: async (formData: FormData) => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/profile`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/upload-avatar`,
         {
           method: "PUT",
           headers: {
@@ -51,26 +59,30 @@ const ProfilePicture = () => {
           body: formData,
         },
       );
-      if (!res.ok) throw new Error("Upload failed");
-      return res.json();
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result?.message || "Upload failed");
+      }
+
+      return result;
     },
     onSuccess: (data) => {
       toast.success(data?.message || "Profile image updated successfully!");
-      queryClient.invalidateQueries({ queryKey: ["profile-img"] });
-      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["user-me"] });
     },
-    onError: (error) => {
-      toast.error("Upload failed");
+    onError: (error: Error) => {
+      toast.error(error.message || "Upload failed");
       console.error(error);
     },
   });
 
   useEffect(() => {
-    const image = data?.data?.profilePicture;
+    const image = data?.data?.profileImage;
     if (image) {
       setProfileImage(image);
     }
-  }, [data?.data?.profilePicture]);
+  }, [data?.data?.profileImage]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -83,7 +95,7 @@ const ProfilePicture = () => {
     reader.readAsDataURL(file);
 
     const formData = new FormData();
-    formData.append("profilePicture", file, file.name);
+    formData.append("profileImage", file, file.name);
     mutate(formData);
   };
 
@@ -126,13 +138,13 @@ const ProfilePicture = () => {
 
         <div className="min-w-0">
           <h4 className="truncate text-base font-semibold leading-[120%] text-white sm:text-lg">
-            {data?.data?.fullName || "N/A"}
+            {data?.data?.name || "N/A"}
           </h4>
           <p className="truncate pt-1 text-xs font-normal leading-[120%] text-[#BDBDBD] sm:text-sm">
             {data?.data?.email || "N/A"}
           </p>
           <span className="mt-3 inline-flex rounded-full bg-primary px-2.5 py-1 text-[10px] font-medium leading-none text-[#1A1A1A] sm:text-xs">
-            Premium member
+            {data?.data?.hasActiveSubscription ? "Premium member" : "Free member"}
           </span>
         </div>
       </div>

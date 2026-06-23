@@ -30,9 +30,7 @@ const formSchema = z.object({
   email: z.string().email({
     message: "Enter a valid email address.",
   }),
-  phoneNumber: z.string().min(2, {
-    message: "Phone Number must be at least 2 characters.",
-  }),
+  phone: z.string(),
   gender: z.string().min(1, {
     message: "Gender is required.",
   }),
@@ -60,15 +58,21 @@ const PersonalInformationForm = () => {
   const token = (session?.user as { accessToken?: string })?.accessToken;
 
   const { data, isLoading } = useQuery<UserApiResponse>({
-    queryKey: ["user-profile"],
+    queryKey: ["user-me"],
     queryFn: async () => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/profile`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/me`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-      return res.json();
+      const result = (await res.json()) as UserApiResponse;
+
+      if (!res.ok || !result.success) {
+        throw new Error(result.message || "Failed to load user profile");
+      }
+
+      return result;
     },
     enabled: !!token,
     staleTime: 1000 * 60 * 5,
@@ -80,7 +84,7 @@ const PersonalInformationForm = () => {
       firstName: "",
       lastName: "",
       email: "",
-      phoneNumber: "",
+      phone: "",
       gender: "male",
     },
   });
@@ -88,13 +92,13 @@ const PersonalInformationForm = () => {
   useEffect(() => {
     if (data?.data) {
       const user = data.data;
-      const { firstName, lastName } = splitFullName(user.fullName);
+      const { firstName, lastName } = splitFullName(user.name);
 
       form.reset({
         firstName,
         lastName,
         email: user.email ?? "",
-        phoneNumber: user.phoneNumber ?? "",
+        phone: user.phone ?? "",
         gender: user.gender === "female" ? "female" : "male",
       });
     }
@@ -104,15 +108,12 @@ const PersonalInformationForm = () => {
     mutationKey: ["update-profile"],
     mutationFn: async (values: z.infer<typeof formSchema>) => {
       const payload = {
-        fullName: `${values.firstName} ${values.lastName}`.trim(),
-        phoneNumber: values.phoneNumber,
+        name: `${values.firstName} ${values.lastName}`.trim(),
         gender: values.gender,
-        country: data?.data?.country ?? "",
-        city: data?.data?.city ?? "",
-        address: data?.data?.address ?? "",
+        phone: values.phone,
       };
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/profile`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/me`,
         {
           method: "PUT",
           headers: {
@@ -122,7 +123,13 @@ const PersonalInformationForm = () => {
           body: JSON.stringify(payload),
         },
       );
-      return res.json();
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result?.message || "Update failed");
+      }
+
+      return result;
     },
     onSuccess: async (data) => {
       if (!data?.success) {
@@ -130,10 +137,9 @@ const PersonalInformationForm = () => {
         return;
       }
       toast.success(data?.message || "Profile updated successfully");
-      await queryClient.invalidateQueries({ queryKey: ["user-profile"] });
-      await queryClient.invalidateQueries({ queryKey: ["profile-img"] });
+      await queryClient.invalidateQueries({ queryKey: ["user-me"] });
     },
-    onError: () => toast.error("Update failed"),
+    onError: (error: Error) => toast.error(error.message || "Update failed"),
   });
 
   if (isLoading) {
@@ -251,7 +257,7 @@ const PersonalInformationForm = () => {
 
               <FormField
                 control={form.control}
-                name="phoneNumber"
+                name="phone"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className={labelClassName}>

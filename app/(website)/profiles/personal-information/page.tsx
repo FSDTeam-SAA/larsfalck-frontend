@@ -9,10 +9,10 @@ const PersonalInformationPage = () => {
     <div className="mb-0 h-full rounded-[6px] bg-[#171717] p-4 sm:p-5">
     <div className="flex items-center justify-between gap-4">
         <div>
-        <h1 className="text-xl font-semibold leading-[120%] text-white sm:text-2xl">
+        <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-semibold leading-[120%] text-white">
         Profile
       </h1>
-      <p className="pb-4 pt-1 text-xs font-normal leading-[120%] text-[#8A8A8A] sm:text-sm">
+      <p className="pb-4 md:pb-6 pt-1 text-sm md:text-base lg:text-lg font-normal leading-[120%] text-[#8A8A8A]">
         Manage your profile
       </p>
       </div>

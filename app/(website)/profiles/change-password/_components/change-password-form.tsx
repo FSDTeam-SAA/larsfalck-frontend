@@ -52,6 +52,14 @@ const formSchema = z
 type FormValues = z.infer<typeof formSchema>;
 type PasswordFieldName = keyof FormValues;
 type PasswordVisibilityKey = "current" | "new" | "confirm";
+type ChangePasswordResponse = {
+  success: boolean;
+  message?: string;
+  errorSources?: Array<{
+    path?: string;
+    message?: string;
+  }>;
+};
 
 const inputClassName =
   "h-9 w-full rounded-[4px] border-0 bg-[#2D2D2D] px-3 pr-9 text-sm font-normal leading-[120%] text-white shadow-none placeholder:text-[#A0A0A0] focus-visible:ring-1 focus-visible:ring-primary";
@@ -132,20 +140,33 @@ export default function ChangePasswordForm() {
           body: JSON.stringify(values),
         },
       );
-      return await res.json();
+      const result = (await res.json()) as ChangePasswordResponse;
+
+      if (!res.ok || !result.success) {
+        throw new Error(result?.message || "Password change failed");
+      }
+
+      return result;
     },
     onSuccess: (data) => {
-      if (!data?.success) {
-        toast.error(data?.message || "Something went wrong");
-        return;
-      }
-      toast.success(data?.message || "Password reset successful");
+      toast.success(data?.message || "Password changed successfully");
       form.reset();
     },
-    onError: () => toast.error("Password reset failed"),
+    onError: (error: Error) => {
+      if (error.message === "Invalid old password") {
+        form.setError("currentPassword", {
+          type: "server",
+          message: "Invalid old password",
+        });
+      }
+
+      toast.error(error.message || "Password change failed");
+    },
   });
 
   function onSubmit(values: FormValues) {
+    form.clearErrors("currentPassword");
+
     mutate({
       oldPassword: values.currentPassword,
       newPassword: values.newPassword,
@@ -186,20 +207,10 @@ export default function ChangePasswordForm() {
   );
 
   return (
-    <div className="h-full rounded-[8px] bg-[#171717] p-4 sm:p-5">
+    <div className="h-full">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div>
-            <h2 className="text-xl font-semibold leading-[120%] text-white sm:text-2xl">
-              Changes Password
-            </h2>
-            <p className="pt-1 text-xs font-normal leading-[120%] text-white sm:text-sm">
-              Manage your account preferences, security settings, and privacy
-              options.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-x-6 gap-y-4 pt-8 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-x-6 gap-y-4 pt-2 md:grid-cols-2">
             <FormField
               control={form.control}
               name="currentPassword"
