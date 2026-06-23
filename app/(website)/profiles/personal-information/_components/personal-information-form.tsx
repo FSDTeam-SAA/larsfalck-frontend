@@ -37,10 +37,10 @@ const formSchema = z.object({
 });
 
 const inputClassName =
-  "h-9 w-full rounded-[2px] border-0 bg-[#242424] px-3 text-sm font-normal leading-[120%] text-white shadow-none placeholder:text-[#8A8A8A] focus-visible:ring-1 focus-visible:ring-primary disabled:bg-[#242424] disabled:text-white disabled:opacity-100";
+  "h-12 w-full rounded-[4px] border-0 bg-[#FFFFFF0F] px-3 text-sm md:text-base font-normal leading-[120%] text-white shadow-none placeholder:text-[#8A8A8A] focus-visible:ring-1 focus-visible:ring-primary disabled:bg-[#242424] disabled:text-white disabled:opacity-100";
 
 const labelClassName =
-  "text-xs font-medium leading-[120%] text-white sm:text-sm";
+  "text-sm md:text-base font-semibold leading-[150%] text-white";
 
 const splitFullName = (fullName?: string) => {
   const [firstName = "", ...lastNameParts] = fullName?.trim().split(" ") ?? [];
@@ -155,12 +155,12 @@ const PersonalInformationForm = () => {
   }
 
   return (
-    <div className="pt-4">
+    <div className="pt-6 md:pt-7 lg:pt-8">
       <div>
-        <h4 className="text-lg font-semibold leading-[120%] text-white sm:text-xl">
+        <h4 className="text-xl md:text-2xl lg:text-3xl font-semibold leading-[120%] text-white">
           Personal Information
         </h4>
-        <p className="pt-1 text-xs font-normal leading-[120%] text-[#BDBDBD] sm:text-sm">
+        <p className="pt-1 text-sm md:text-base font-normal leading-[120%] text-white">
           Manage your personal information and profile details.
         </p>
       </div>
@@ -178,14 +178,14 @@ const PersonalInformationForm = () => {
                       {["male", "female"].map((gender) => (
                         <label
                           key={gender}
-                          className="flex items-center gap-2 text-xs font-medium capitalize leading-none text-white"
+                          className="flex items-center gap-2 text-sm md:text-base font-medium capitalize leading-none text-white"
                         >
                           <input
                             type="radio"
                             value={gender}
                             checked={field.value === gender}
                             onChange={() => field.onChange(gender)}
-                            className="size-3 accent-primary"
+                            className="size-4 accent-primary cursor-pointer"
                           />
                           {gender}
                         </label>
@@ -245,7 +245,7 @@ const PersonalInformationForm = () => {
                     <FormControl>
                       <Input
                         disabled
-                        className={inputClassName}
+                        className={`${inputClassName} disabled:!pointer-events-auto disabled:!cursor-not-allowed`}
                         placeholder="example@example.com"
                         {...field}
                       />
@@ -276,10 +276,10 @@ const PersonalInformationForm = () => {
               />
             </div>
 
-            <div className="flex items-center pt-4">
+            <div className="flex items-center py-4">
               <Button
                 disabled={isPending}
-                className="h-6 rounded-full bg-primary px-3 text-[10px] font-semibold leading-none text-[#1A1A1A] hover:bg-primary/90"
+                className="h-9 rounded-full bg-primary px-4 py-2 text-xs md:text-sm font-medium leading-none text-black hover:bg-primary/90"
                 type="submit"
               >
                 {isPending ? "Saving..." : "Save Changes"}

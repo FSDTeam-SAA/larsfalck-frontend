@@ -62,9 +62,9 @@ type ChangePasswordResponse = {
 };
 
 const inputClassName =
-  "h-9 w-full rounded-[4px] border-0 bg-[#2D2D2D] px-3 pr-9 text-sm font-normal leading-[120%] text-white shadow-none placeholder:text-[#A0A0A0] focus-visible:ring-1 focus-visible:ring-primary";
+  "h-12 w-full rounded-[8px] border-0 bg-[#333333] px-3 pr-9 text-sm font-normal leading-[120%] text-white shadow-none placeholder:text-[#A0A0A0] focus-visible:ring-1 focus-visible:ring-primary";
 
-const labelClassName = "text-xs font-medium leading-[120%] text-white";
+const labelClassName = "text-sm md:text-base font-semibold leading-[150%] text-white";
 
 const passwordRequirements = [
   {
@@ -164,6 +164,20 @@ export default function ChangePasswordForm() {
     },
   });
 
+  function handleDiscardChanges() {
+    form.reset({
+      currentPassword: "",
+      newPassword: "",
+      confirmNewPassword: "",
+    });
+    form.clearErrors();
+    setShowPasswords({
+      current: false,
+      new: false,
+      confirm: false,
+    });
+  }
+
   function onSubmit(values: FormValues) {
     form.clearErrors("currentPassword");
 
@@ -198,9 +212,9 @@ export default function ChangePasswordForm() {
         }
       >
         {showPasswords[visibilityKey] ? (
-          <Eye className="size-3.5" />
+          <Eye className="size-4 text-[#979797]" />
         ) : (
-          <EyeOff className="size-3.5" />
+          <EyeOff className="size-4 text-[#979797]" />
         )}
       </button>
     </div>
@@ -265,9 +279,9 @@ export default function ChangePasswordForm() {
                   {isValid ? (
                     <Check className="size-3 text-white" />
                   ) : (
-                    <X className="size-3 text-[#E5102E]" />
+                    <X className="size-3 text-[#E61515]" />
                   )}
-                  <span className={isValid ? "text-white" : "text-[#E5102E]"}>
+                  <span className={isValid ? "text-white text-xs md:text-sm font-normal leading-[120%]" : "text-[#E61515] text-xs md:text-sm font-normal leading-[120%]"}>
                     {requirement.text}
                   </span>
                 </li>
@@ -275,19 +289,20 @@ export default function ChangePasswordForm() {
             })}
           </ul>
 
-          <div className="flex items-center gap-3 pt-8">
+          <div className="flex items-center gap-3 pt-6 md:pt-8">
             <Button
               type="button"
               variant="outline"
-              onClick={() => form.reset()}
-              className="h-6 rounded-full border-0 bg-[#2F2F2F] px-3 text-[10px] font-medium leading-none text-white hover:bg-[#3A3A3A] hover:text-white"
+              onClick={handleDiscardChanges}
+              disabled={isPending || !form.formState.isDirty}
+              className="h-9 rounded-full border-0 bg-[#E6FDE629] px-4 text-white text-xs md:text-sm font-medium leading-[120%] hover:bg-[#3A3A3A] hover:text-white"
             >
               Discard Changes
             </Button>
             <Button
               disabled={isPending}
               type="submit"
-              className="h-6 rounded-full bg-primary px-3 text-[10px] font-semibold leading-none text-[#1A1A1A] hover:bg-primary/90"
+              className="h-9 rounded-full bg-primary px-4 text-black text-xs md:text-sm font-medium leading-[120%] hover:bg-primary/90"
             >
               {isPending ? "Saving..." : "Save Changes"}
             </Button>

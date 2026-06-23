@@ -102,14 +102,15 @@ const ProfilePicture = () => {
   return (
     <div className="flex items-center justify-between gap-4 rounded-[6px] bg-[#252525] p-3 sm:p-4">
       <div className="flex min-w-0 items-center gap-4">
-        <div className="relative w-fit shrink-0 rounded-full border-2 border-white bg-[#1A1A1A] shadow-[0_4px_15px_rgba(0,0,0,0.25)]">
+
+        <div className="relative w-fit shrink-0 rounded-full border-2 border-white bg-[#FFFFFF0F] shadow-[0_4px_15px_rgba(0,0,0,0.25)]">
           <div className="relative">
-            <div className="relative size-16 overflow-hidden rounded-full sm:size-20">
+            <div className="relative size-20 md:size-24 lg:size-28 overflow-hidden rounded-full">
               <Image
                 src={profileImage}
                 alt="Profile"
-                width={80}
-                height={80}
+                width={114}
+                height={114}
                 className="size-full object-cover"
               />
             </div>
@@ -125,35 +126,35 @@ const ProfilePicture = () => {
 
               <Button
                 size="sm"
-                className="size-6 rounded-full bg-primary p-0 text-[#1A1A1A] hover:bg-primary/90 sm:size-7"
+                className="size-7 rounded-full bg-primary p-1 text-[#1A1A1A] hover:bg-primary/90"
                 title="Upload new image"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isPending}
               >
-                <Camera className="size-3.5" />
+                <Camera className="size-4 text-white" />
               </Button>
             </div>
           </div>
         </div>
 
         <div className="min-w-0">
-          <h4 className="truncate text-base font-semibold leading-[120%] text-white sm:text-lg">
+          <h4 className="truncate text-lg md:text-xl lg:text-2xl font-semibold leading-[150%] text-white">
             {data?.data?.name || "N/A"}
           </h4>
-          <p className="truncate pt-1 text-xs font-normal leading-[120%] text-[#BDBDBD] sm:text-sm">
+          <p className="truncate pt-1 text-xs md:text-sm font-normal leading-[150%] text-white">
             {data?.data?.email || "N/A"}
           </p>
-          <span className="mt-3 inline-flex rounded-full bg-primary px-2.5 py-1 text-[10px] font-medium leading-none text-[#1A1A1A] sm:text-xs">
+          <span className="mt-3 inline-flex rounded-full bg-[#00EF0126] px-4 py-1.5 text-xs md:text-sm font-normal leading-[150%] text-white">
             {data?.data?.hasActiveSubscription ? "Premium member" : "Free member"}
           </span>
         </div>
       </div>
 
       <div className="hidden text-right sm:block">
-        <p className="text-xs font-normal leading-[120%] text-[#8A8A8A]">
+        <p className="text-sm md:text-base font-normal leading-[120%] text-[#8A8A8A]">
           Member since
         </p>
-        <p className="pt-2 text-sm font-medium leading-[120%] text-white">
+        <p className="pt-2 text-base md:text-lg lg:text-xl font-semibold leading-[120%] text-white">
           {formatMemberSince(data?.data?.createdAt)}
         </p>
       </div>
