@@ -1,27 +1,27 @@
-
-
-
 export interface User {
   _id: string;
-  fullName: string;
+  name: string;
   email: string;
-  role: "user" | "admin" | string;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-
-  address?: string;
-  city?: string;
-  country?: string;
+  role: "USER" | "ADMIN" | string;
+  createdAt?: string;
+  updatedAt?: string;
+  dob?: string | null;
+  phone?: string | null;
   gender?: "male" | "female" | "other" | string;
-
-  otp?: string;
-  otpExpiry?: string;
-
-  phoneNumber?: string;
-  profilePicture?: string;
-
-  verifiedForget?: boolean;
+  bio?: string;
+  profileImage?: string;
+  preferredGenres?: string[];
+  address?: {
+    country?: string;
+    cityState?: string;
+    roadArea?: string;
+    postalCode?: string;
+    taxId?: string;
+  };
+  subscription?: {
+    status?: string;
+  };
+  hasActiveSubscription?: boolean;
 }
 
 export interface UserApiResponse {

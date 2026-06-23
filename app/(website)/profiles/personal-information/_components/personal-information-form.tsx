@@ -30,19 +30,17 @@ const formSchema = z.object({
   email: z.string().email({
     message: "Enter a valid email address.",
   }),
-  phoneNumber: z.string().min(2, {
-    message: "Phone Number must be at least 2 characters.",
-  }),
+  phone: z.string(),
   gender: z.string().min(1, {
     message: "Gender is required.",
   }),
 });
 
 const inputClassName =
-  "h-9 w-full rounded-[2px] border-0 bg-[#242424] px-3 text-sm font-normal leading-[120%] text-white shadow-none placeholder:text-[#8A8A8A] focus-visible:ring-1 focus-visible:ring-primary disabled:bg-[#242424] disabled:text-white disabled:opacity-100";
+  "h-12 w-full rounded-[4px] border-0 bg-[#FFFFFF0F] px-3 text-sm md:text-base font-normal leading-[120%] text-white shadow-none placeholder:text-[#8A8A8A] focus-visible:ring-1 focus-visible:ring-primary disabled:bg-[#242424] disabled:text-white disabled:opacity-100";
 
 const labelClassName =
-  "text-xs font-medium leading-[120%] text-white sm:text-sm";
+  "text-sm md:text-base font-semibold leading-[150%] text-white";
 
 const splitFullName = (fullName?: string) => {
   const [firstName = "", ...lastNameParts] = fullName?.trim().split(" ") ?? [];
@@ -60,15 +58,21 @@ const PersonalInformationForm = () => {
   const token = (session?.user as { accessToken?: string })?.accessToken;
 
   const { data, isLoading } = useQuery<UserApiResponse>({
-    queryKey: ["user-profile"],
+    queryKey: ["user-me"],
     queryFn: async () => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/profile`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/me`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-      return res.json();
+      const result = (await res.json()) as UserApiResponse;
+
+      if (!res.ok || !result.success) {
+        throw new Error(result.message || "Failed to load user profile");
+      }
+
+      return result;
     },
     enabled: !!token,
     staleTime: 1000 * 60 * 5,
@@ -80,7 +84,7 @@ const PersonalInformationForm = () => {
       firstName: "",
       lastName: "",
       email: "",
-      phoneNumber: "",
+      phone: "",
       gender: "male",
     },
   });
@@ -88,13 +92,13 @@ const PersonalInformationForm = () => {
   useEffect(() => {
     if (data?.data) {
       const user = data.data;
-      const { firstName, lastName } = splitFullName(user.fullName);
+      const { firstName, lastName } = splitFullName(user.name);
 
       form.reset({
         firstName,
         lastName,
         email: user.email ?? "",
-        phoneNumber: user.phoneNumber ?? "",
+        phone: user.phone ?? "",
         gender: user.gender === "female" ? "female" : "male",
       });
     }
@@ -104,15 +108,12 @@ const PersonalInformationForm = () => {
     mutationKey: ["update-profile"],
     mutationFn: async (values: z.infer<typeof formSchema>) => {
       const payload = {
-        fullName: `${values.firstName} ${values.lastName}`.trim(),
-        phoneNumber: values.phoneNumber,
+        name: `${values.firstName} ${values.lastName}`.trim(),
         gender: values.gender,
-        country: data?.data?.country ?? "",
-        city: data?.data?.city ?? "",
-        address: data?.data?.address ?? "",
+        phone: values.phone,
       };
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/profile`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/me`,
         {
           method: "PUT",
           headers: {
@@ -122,7 +123,13 @@ const PersonalInformationForm = () => {
           body: JSON.stringify(payload),
         },
       );
-      return res.json();
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result?.message || "Update failed");
+      }
+
+      return result;
     },
     onSuccess: async (data) => {
       if (!data?.success) {
@@ -130,10 +137,9 @@ const PersonalInformationForm = () => {
         return;
       }
       toast.success(data?.message || "Profile updated successfully");
-      await queryClient.invalidateQueries({ queryKey: ["user-profile"] });
-      await queryClient.invalidateQueries({ queryKey: ["profile-img"] });
+      await queryClient.invalidateQueries({ queryKey: ["user-me"] });
     },
-    onError: () => toast.error("Update failed"),
+    onError: (error: Error) => toast.error(error.message || "Update failed"),
   });
 
   if (isLoading) {
@@ -149,12 +155,12 @@ const PersonalInformationForm = () => {
   }
 
   return (
-    <div className="pt-4">
+    <div className="pt-6 md:pt-7 lg:pt-8">
       <div>
-        <h4 className="text-lg font-semibold leading-[120%] text-white sm:text-xl">
+        <h4 className="text-xl md:text-2xl lg:text-3xl font-semibold leading-[120%] text-white">
           Personal Information
         </h4>
-        <p className="pt-1 text-xs font-normal leading-[120%] text-[#BDBDBD] sm:text-sm">
+        <p className="pt-1 text-sm md:text-base font-normal leading-[120%] text-white">
           Manage your personal information and profile details.
         </p>
       </div>
@@ -172,14 +178,14 @@ const PersonalInformationForm = () => {
                       {["male", "female"].map((gender) => (
                         <label
                           key={gender}
-                          className="flex items-center gap-2 text-xs font-medium capitalize leading-none text-white"
+                          className="flex items-center gap-2 text-sm md:text-base font-medium capitalize leading-none text-white"
                         >
                           <input
                             type="radio"
                             value={gender}
                             checked={field.value === gender}
                             onChange={() => field.onChange(gender)}
-                            className="size-3 accent-primary"
+                            className="size-4 accent-primary cursor-pointer"
                           />
                           {gender}
                         </label>
@@ -239,7 +245,7 @@ const PersonalInformationForm = () => {
                     <FormControl>
                       <Input
                         disabled
-                        className={inputClassName}
+                        className={`${inputClassName} disabled:!pointer-events-auto disabled:!cursor-not-allowed`}
                         placeholder="example@example.com"
                         {...field}
                       />
@@ -251,7 +257,7 @@ const PersonalInformationForm = () => {
 
               <FormField
                 control={form.control}
-                name="phoneNumber"
+                name="phone"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className={labelClassName}>
@@ -270,10 +276,10 @@ const PersonalInformationForm = () => {
               />
             </div>
 
-            <div className="flex items-center pt-4">
+            <div className="flex items-center py-4">
               <Button
                 disabled={isPending}
-                className="h-6 rounded-full bg-primary px-3 text-[10px] font-semibold leading-none text-[#1A1A1A] hover:bg-primary/90"
+                className="h-9 rounded-full bg-primary px-4 py-2 text-xs md:text-sm font-medium leading-none text-black hover:bg-primary/90"
                 type="submit"
               >
                 {isPending ? "Saving..." : "Save Changes"}
