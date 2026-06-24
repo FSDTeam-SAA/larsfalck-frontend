@@ -4,11 +4,24 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Library, Disc3, ListMusic, Mic2, Plus, Menu, Music2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Disc3,
+  Library,
+  ListMusic,
+  Menu,
+  Mic2,
+  Music2,
+  Plus,
+} from "lucide-react";
+import { useSession } from "next-auth/react";
+
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { getMyPlaylists } from "@/app/(website)/playlists/_components/playlist-api";
 
 const navItems = [
   { label: "Your Library", href: "/library", icon: Library },
@@ -17,13 +30,20 @@ const navItems = [
   { label: "Artists", href: "/artists", icon: Mic2 },
 ];
 
-const myPlaylists = [
-  { label: "My Favorites Mix", href: "/playlists/favorites" },
-  { label: "Workout Jams", href: "/playlists/workout" },
-];
-
 function SidebarContent() {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
+  const token = (session?.user as { accessToken?: string } | undefined)
+    ?.accessToken;
+  const isAuthenticated = status === "authenticated" && Boolean(token);
+
+  const { data: playlists = [], isPending } = useQuery({
+    queryKey: ["my-playlists", token],
+    queryFn: () => getMyPlaylists(token as string),
+    enabled: isAuthenticated,
+    staleTime: 1000 * 60 * 5,
+    retry: false,
+  });
 
   return (
     <ScrollArea className="h-full">
@@ -37,7 +57,7 @@ function SidebarContent() {
               <Button
                 className={cn(
                   "h-12 w-full justify-start gap-3 rounded-lg bg-[#FFFFFF0D] text-base font-medium text-[#FFFFFF] hover:bg-[#FFFFFF] hover:text-[#333333] sm:text-lg xl:h-[50px] xl:text-[22px]",
-                  active && "bg-[#FFFFFF] text-[#333333]"
+                  active && "bg-[#FFFFFF] text-[#333333]",
                 )}
               >
                 <item.icon className="!h-6 !w-6" />
@@ -61,25 +81,44 @@ function SidebarContent() {
       </div>
 
       <div className="flex flex-col gap-3 px-2 pb-3">
-        {myPlaylists.map((pl) => {
-          const active = pathname === pl.href;
-          return (
-            <Link key={pl.href} href={pl.href}>
-              <Button
-                variant="ghost"
-                className={cn(
-                  "w-full justify-start gap-3 rounded-lg px-2 text-sm font-normal text-zinc-300 hover:bg-[#2a2a2a] hover:text-white",
-                  active && "bg-[#2a2a2a] text-white"
-                )}
-              >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-[#1ed760] to-emerald-900">
-                  <Music2 className="h-3.5 w-3.5 text-black/70" />
-                </span>
-                <span className="truncate">{pl.label}</span>
-              </Button>
-            </Link>
-          );
-        })}
+        {status === "loading" || (isAuthenticated && isPending) ? (
+          Array.from({ length: 2 }).map((_, index) => (
+            <div key={index} className="flex items-center gap-3 px-2">
+              <Skeleton className="size-7 rounded-md bg-white/10" />
+              <Skeleton className="h-4 flex-1 bg-white/10" />
+            </div>
+          ))
+        ) : !isAuthenticated ? (
+          <p className="px-2 text-sm text-zinc-500">
+            Sign in to see playlists.
+          </p>
+        ) : playlists.length > 0 ? (
+          playlists.map((playlist) => {
+            const href = `/playlists/${playlist._id}?name=${encodeURIComponent(
+              playlist.name,
+            )}`;
+            const active = pathname === `/playlists/${playlist._id}`;
+
+            return (
+              <Link key={playlist._id} href={href}>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-start gap-3 rounded-lg px-2 text-sm font-normal text-zinc-300 hover:bg-[#2a2a2a] hover:text-white",
+                    active && "bg-[#2a2a2a] text-white",
+                  )}
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-[#1ed760] to-emerald-900">
+                    <Music2 className="h-3.5 w-3.5 text-black/70" />
+                  </span>
+                  <span className="truncate">{playlist.name}</span>
+                </Button>
+              </Link>
+            );
+          })
+        ) : (
+          <p className="px-2 text-sm text-zinc-500">No playlists yet.</p>
+        )}
       </div>
     </ScrollArea>
   );
@@ -104,7 +143,10 @@ export function Sidebar() {
             <Menu className="h-5 w-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-64 border-r border-white/5 bg-[#161616] p-0">
+        <SheetContent
+          side="left"
+          className="w-64 border-r border-white/5 bg-[#161616] p-0"
+        >
           <SidebarContent />
         </SheetContent>
       </Sheet>

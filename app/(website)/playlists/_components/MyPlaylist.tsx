@@ -1,40 +1,41 @@
-import MusicCard from "@/components/common/MusicCard";
-import { CreatePlaylistModal } from "./CreatePlaylistModal";
+"use client";
 
-const songs = [
-  {
-    title: "Morning Serenity",
-    artist: "Emma Rhodes",
-    type: "Piano Collection",
-    image: "/albam.png",
-  },
-  {
-    title: "Ocean Breeze",
-    artist: "Daniel Hart",
-    type: "Nature Sounds Collection",
-    image: "/albam2.png",
-  },
-  {
-    title: "Zen Journey",
-    artist: "Daniel Hart",
-    type: "Meditation Essentials",
-    image: "/albam.png",
-  },
-  {
-    title: "Sunset Dreams",
-    artist: "Sophia Lane",
-    type: "Evening Lounge",
-    image: "/albam2.png",
-  },
-  {
-    title: "Midnight Calm",
-    artist: "Michael Stone",
-    type: "Night Ambience",
-    image: "/albam.png",
-  },
-];
+import MusicCard from "@/components/common/MusicCard";
+import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
+
+import { CreatePlaylistModal } from "./CreatePlaylistModal";
+import MyPlaylistSkeleton from "./MyPlaylistSkeleton";
+import { getMyPlaylists } from "./playlist-api";
+
+function getPlaylistYear(date: string) {
+  const year = new Date(date).getFullYear();
+
+  return Number.isNaN(year) ? undefined : year;
+}
+
+function formatSongCount(count: number) {
+  return `${count.toLocaleString()} ${count === 1 ? "Song" : "Songs"}`;
+}
 
 export function MyPlaylist() {
+  const { data: session, status } = useSession();
+  const token = (session?.user as { accessToken?: string } | undefined)
+    ?.accessToken;
+  const isAuthenticated = status === "authenticated" && Boolean(token);
+
+  const { data: playlists = [], isPending, error } = useQuery({
+    queryKey: ["my-playlists", token],
+    queryFn: () => getMyPlaylists(token as string),
+    enabled: isAuthenticated,
+    staleTime: 1000 * 60 * 5,
+    retry: false,
+  });
+
+  if (status === "loading" || (isAuthenticated && isPending)) {
+    return <MyPlaylistSkeleton />;
+  }
+
   return (
     <section className="px-3 py-5 sm:px-6 sm:py-6">
       <div className="mb-4 flex items-center justify-between sm:mb-7">
@@ -43,20 +44,40 @@ export function MyPlaylist() {
         </h2>
         <CreatePlaylistModal />
       </div>
-      <h3 className="text-white text-xl mb-3">My Playlists</h3>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {songs.map((song) => (
-          <MusicCard
-            key={song.title}
-            href="#"
-            image={song.image}
-            title={song.title}
-            artist={song.artist}
-            type={song.type}
-          />
-        ))}
-      </div>
+      <h3 className="mb-3 text-xl text-white">My Playlists</h3>
+
+      {!isAuthenticated ? (
+        <p className="rounded-lg bg-white/5 px-4 py-8 text-center text-sm text-[#A8A8A8]">
+          Please sign in to view your playlists.
+        </p>
+      ) : error ? (
+        <p className="rounded-lg bg-red-500/10 px-4 py-8 text-center text-sm text-red-300">
+          {error instanceof Error
+            ? error.message
+            : "Unable to load playlists. Please try again later."}
+        </p>
+      ) : playlists.length > 0 ? (
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {playlists.map((playlist) => (
+            <MusicCard
+              key={playlist._id}
+              href={`/playlists/${playlist._id}?name=${encodeURIComponent(
+                playlist.name,
+              )}`}
+              image={playlist.coverImage || "/albam.png"}
+              title={playlist.name}
+              artist={formatSongCount(playlist.songs.length)}
+              year={getPlaylistYear(playlist.createdAt)}
+              type="Playlist"
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="rounded-lg bg-white/5 px-4 py-8 text-center text-sm text-[#A8A8A8]">
+          You do not have any playlists yet.
+        </p>
+      )}
     </section>
   );
 }

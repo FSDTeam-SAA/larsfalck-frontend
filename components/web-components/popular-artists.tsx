@@ -2,10 +2,18 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const artists = [
+export type HomeArtist = {
+  _id: string;
+  name: string;
+  image?: string;
+  totalPlays?: number;
+  songCount?: number;
+};
+
+const fallbackArtists = [
   { name: "Lars Falck", meta: "12 Albums • 245 Songs", image: "/artis.png" },
   { name: "Emma Rhodes", meta: "12 Albums • 245 Songs", image: "/artis.png" },
-  { name: "Daniel Hart", meta: "12 Albums • 245 Songs",image: "/artis.png" },
+  { name: "Daniel Hart", meta: "12 Albums • 245 Songs", image: "/artis.png" },
   { name: "Sophia Lane", meta: "12 Albums • 245 Songs", image: "/artis.png" },
   { name: "Michael Stone", meta: "12 Albums • 245 Songs", image: "/artis.png" },
   { name: "Olivia Grace", meta: "12 Albums • 245 Songs", image: "/artis.png" },
@@ -13,7 +21,34 @@ const artists = [
   { name: "Isabella Moore", meta: "12 Albums • 245 Songs", image: "/artis.png" },
 ];
 
-export function PopularArtists() {
+type PopularArtistsProps = {
+  artists?: HomeArtist[];
+};
+
+function formatArtistMeta(artist: HomeArtist) {
+  const songCount = artist.songCount ?? 0;
+  const plays = artist.totalPlays ?? 0;
+
+  return `${songCount.toLocaleString()} ${
+    songCount === 1 ? "Song" : "Songs"
+  } • ${plays.toLocaleString()} Plays`;
+}
+
+export function PopularArtists({ artists }: PopularArtistsProps) {
+  const items =
+    artists?.map((artist) => ({
+      id: artist._id,
+      name: artist.name,
+      image: artist.image || "/artis.png",
+      meta: formatArtistMeta(artist),
+      href: `/single-artists/${artist._id}`,
+    })) ||
+    fallbackArtists.map((artist) => ({
+      ...artist,
+      id: artist.name,
+      href: "#",
+    }));
+
   return (
     <section className="px-3 py-5 sm:px-6 sm:py-6">
       <div className="mb-4 flex items-center justify-between sm:mb-7">
@@ -29,10 +64,10 @@ export function PopularArtists() {
       </div>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-        {artists.map((artist) => (
+        {items.slice(0, 5).map((artist) => (
           <Link
-            key={artist.name}
-            href="#"
+            key={artist.id}
+            href={artist.href}
             className="group flex flex-col gap-2 rounded-lg p-1.5 transition hover:bg-[#212121] sm:p-2"
           >
             <div className="relative overflow-hidden rounded-md">
