@@ -46,6 +46,17 @@ export interface PlansApiResponse {
   responseTime?: string;
 }
 
+export interface CheckoutApiResponse {
+  statusCode: number;
+  success: boolean;
+  message: string;
+  data?: {
+    checkoutUrl?: string;
+    sessionId?: string;
+  };
+  responseTime?: string;
+}
+
 export type PlanTone = "free" | "premium" | "family";
 
 export interface SubscriptionPlanCardData {

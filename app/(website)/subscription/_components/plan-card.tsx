@@ -1,6 +1,15 @@
-import type { PlanTone, SubscriptionPlanCardData } from "./plan-data-type";
+"use client";
+
 import { Button } from "@/components/ui/button";
+import { useSession } from "next-auth/react";
 import { CircleCheck } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import type {
+  CheckoutApiResponse,
+  PlanTone,
+  SubscriptionPlanCardData,
+} from "./plan-data-type";
 
 const toneStyles: Record<
   PlanTone,
@@ -39,6 +48,47 @@ const formatPrice = (price: number) =>
 
 const PlanCard = ({ plan }: { plan: SubscriptionPlanCardData }) => {
   const styles = toneStyles[plan.tone];
+  const { data: session, status } = useSession();
+  const token = (session?.user as { accessToken?: string })?.accessToken;
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleCheckout = async () => {
+    if (!plan?.id) return;
+
+    if (!token) {
+      toast.error("Please login first");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/subscription/checkout`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ planId: plan?.id }),
+        },
+      );
+      const result = (await response.json()) as CheckoutApiResponse;
+
+      if (!response.ok || !result.success || !result.data?.checkoutUrl) {
+        throw new Error(result.message || "Checkout failed");
+      }
+
+      window.location.href = result?.data?.checkoutUrl;
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Something went wrong",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <article
@@ -73,9 +123,11 @@ const PlanCard = ({ plan }: { plan: SubscriptionPlanCardData }) => {
 
       <Button
         type="button"
+        onClick={handleCheckout}
+        disabled={isLoading || status === "loading"}
         className={`mt-auto h-12 w-full rounded-full text-sm md:text-base font-medium leading-[120%] shadow-none ${styles.button}`}
       >
-        {plan?.buttonLabel}
+        {isLoading ? "Processing..." : plan?.buttonLabel}
       </Button>
     </article>
   );
