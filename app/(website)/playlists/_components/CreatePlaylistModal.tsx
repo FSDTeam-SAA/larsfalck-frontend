@@ -3,6 +3,8 @@
 import { type FormEvent, useState } from "react";
 import { CirclePlus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,15 +19,57 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { createPlaylist } from "./playlist-api";
+
 export function CreatePlaylistModal() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { data: session, status } = useSession();
+  const token = (session?.user as { accessToken?: string } | undefined)
+    ?.accessToken;
+  const isAuthenticated = status === "authenticated" && Boolean(token);
   const [open, setOpen] = useState(false);
   const [playlistName, setPlaylistName] = useState("");
+  const [formError, setFormError] = useState("");
+
+  const createPlaylistMutation = useMutation({
+    mutationFn: () =>
+      createPlaylist(token as string, {
+        name: playlistName.trim(),
+      }),
+    onSuccess: async (playlist) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["my-playlists", token],
+      });
+
+      closeModal();
+
+      if (playlist?._id) {
+        router.push(
+          `/playlists/${playlist._id}?name=${encodeURIComponent(
+            playlist.name,
+          )}`,
+        );
+      }
+    },
+    onError: (error) => {
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "Could not create playlist. Please try again.",
+      );
+    },
+  });
+
+  function resetForm() {
+    setPlaylistName("");
+    setFormError("");
+  }
 
   function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
 
-    if (!nextOpen) setPlaylistName("");
+    if (!nextOpen) resetForm();
   }
 
   function closeModal() {
@@ -38,16 +82,22 @@ export function CreatePlaylistModal() {
     const name = playlistName.trim();
 
     if (!name) return;
+    if (!isAuthenticated) {
+      setFormError("Please sign in to create a playlist.");
+      return;
+    }
 
-    // The playlist API can be connected here when it is available.
-    closeModal();
-    router.push(`/playlists/3?name=${encodeURIComponent(name)}`);
+    setFormError("");
+    createPlaylistMutation.mutate();
   }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="h-10 gap-2 rounded-full px-3 text-sm text-black sm:h-12 sm:px-4 sm:text-base">
+        <Button
+          disabled={status === "unauthenticated"}
+          className="h-10 gap-2 rounded-full px-3 text-sm text-black sm:h-12 sm:px-4 sm:text-base"
+        >
           <CirclePlus className="size-4 sm:size-5" />
           <span className="whitespace-nowrap">Create Playlist</span>
         </Button>
@@ -80,6 +130,18 @@ export function CreatePlaylistModal() {
 
         <form onSubmit={handleSubmit} className="mt-5">
           <div className="space-y-2">
+            {formError && (
+              <p className="rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                {formError}
+              </p>
+            )}
+
+            {!isAuthenticated && status !== "loading" && (
+              <p className="rounded-md bg-white/5 px-3 py-2 text-sm text-[#A8A8A8]">
+                Please sign in to create a playlist.
+              </p>
+            )}
+
             <Label
               htmlFor="playlist-name"
               className="text-xs font-medium text-white sm:text-xl"
@@ -108,9 +170,14 @@ export function CreatePlaylistModal() {
             </Button>
             <Button
               type="submit"
+              disabled={
+                !isAuthenticated ||
+                createPlaylistMutation.isPending ||
+                !playlistName.trim()
+              }
               className="h-10 rounded-full bg-[#00EF01] px-3 text-xs font-medium text-black hover:bg-[#00D801] sm:h-11 sm:text-sm"
             >
-              Add Song
+              {createPlaylistMutation.isPending ? "Creating..." : "Add Song"}
             </Button>
           </div>
         </form>

@@ -28,5 +28,5 @@ export default function PlaylistPage({
     : searchParams?.name;
   const title = requestedName?.trim() || formatPlaylistId(params.id);
 
-  return <PlaylistDetails title={title} />;
+  return <PlaylistDetails playlistId={params.id} title={title} />;
 }
