@@ -1,78 +1,108 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { AlertCircle, Layers3, LoaderCircle } from "lucide-react";
 import BillingHistory from "./billing-history";
 import CurrentSubscription from "./current-subscription";
-import PlanCard, { SubscriptionPlan } from "./plan-card";
+import PlanCard from "./plan-card";
+import type {
+  PlanItem,
+  PlansApiResponse,
+  PlanTone,
+  SubscriptionPlanCardData,
+} from "./plan-data-type";
+import QueryStateCard from "./query-state-card";
 
-const plans: SubscriptionPlan[] = [
-  {
-    name: "Free",
-    price: "$0.00",
-    period: "/month",
-    features: [
-      "Ad-supported listening",
-      "Suffle play only",
-      "Standard audio quality",
-      "Mobile only",
-    ],
-    buttonLabel: "Current Plan",
-    tone: "free",
-    isCurrent: true,
-  },
-  {
-    name: "Premium",
-    price: "$9.99",
-    period: "/month",
-    features: [
-      "Ad-free music",
-      "Play any song",
-      "Download 10,000 songs",
-      "High quality audio",
-      "Offline mode",
-      "All devices",
-    ],
-    buttonLabel: "Current Plan",
-    tone: "premium",
-    isCurrent: true,
-    isHighlighted: true,
-  },
-  {
-    name: "Family",
-    price: "$15.99",
-    period: "/month",
-    features: [
-      "6 accounts",
-      "All premium features",
-      "parental controls",
-      "Family mix playlists",
-      "Add-free",
-    ],
-    buttonLabel: "Upgrade to Family",
-    tone: "family",
-  },
-];
+const getPlanTone = (name: string): PlanTone => {
+  const normalizedName = name.toLowerCase();
+
+  if (normalizedName.includes("family")) return "family";
+  if (normalizedName.includes("premium")) return "premium";
+
+  return "free";
+};
+
+const getPlanButtonLabel = (plan: PlanItem) => {
+  if (plan.price === 0) return "Current Plan";
+  if (plan.name.toLowerCase().includes("family")) return "Upgrade to Family";
+  if (plan.name.toLowerCase().includes("premium")) return "Upgrade to Premium";
+
+  return "Choose Plan";
+};
+
+const mapPlanToCard = (plan: PlanItem): SubscriptionPlanCardData => ({
+  id: plan._id,
+  name: plan.name,
+  price: plan.price,
+  billingCycle: plan.billingCycle,
+  features: plan.features,
+  buttonLabel: getPlanButtonLabel(plan),
+  tone: getPlanTone(plan.name),
+});
+
+async function getPlans(): Promise<SubscriptionPlanCardData[]> {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/plan`);
+  const result = (await response.json()) as PlansApiResponse;
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || "Failed to load plans");
+  }
+
+  return Array.isArray(result.data?.plans)
+    ? result.data.plans.map(mapPlanToCard)
+    : [];
+}
 
 const SubscriptionContainer = () => {
+  const { data: plans = [], isLoading, isError } = useQuery({
+    queryKey: ["subscription-plans"],
+    queryFn: getPlans,
+    staleTime: 1000 * 60 * 5,
+  });
+
   return (
-    <section className="min-h-full rounded-[8px] bg-[#171717] p-4 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.03)] sm:p-5 lg:p-6">
-      <h1 className="text-[28px] font-semibold leading-none text-white sm:text-[32px]">
+    <section className="min-h-full rounded-[16px] bg-[#FFFFFF1A] p-4 md:p-5 lg:p-6 text-white ">
+      <h1 className="text-2xl md:text-3xl lg:text-4xl font-semibold leading-none text-white ">
         Subscription
       </h1>
 
-      <div className="pt-8">
+      <div className="pt-4 md:pt-6 lg:pt-8">
         <CurrentSubscription />
       </div>
 
-      <div className="pt-14">
-        <h2 className="text-[21px] font-semibold leading-none text-white sm:text-2xl">
+      <div className="pt-8 md:pt-10 lg:pt-12">
+        <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold leading-[120%] text-white">
           Available Plans
         </h2>
-        <div className="grid grid-cols-1 gap-5 pt-7 md:grid-cols-3 xl:gap-6">
-          {plans.map((plan) => (
-            <PlanCard key={plan.name} plan={plan} />
-          ))}
-        </div>
+        {isLoading ? (
+          <QueryStateCard
+            title="Loading plans"
+            description="We’re pulling the latest subscription options for you."
+            icon={LoaderCircle}
+          />
+        ) : isError ? (
+          <QueryStateCard
+            title="Couldn’t load plans"
+            description="Please refresh the page or check back in a moment."
+            icon={AlertCircle}
+            tone="error"
+          />
+        ) : plans.length === 0 ? (
+          <QueryStateCard
+            title="No plans available"
+            description="There are no subscription plans to show right now."
+            icon={Layers3}
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-5 pt-4 md:pt-6 lg:pt-7 md:grid-cols-3 xl:gap-6">
+            {plans?.map((plan) => (
+              <PlanCard key={plan.id} plan={plan} />
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="pt-14">
+      <div className="pt-8 md:pt-10 lg:pt-12">
         <BillingHistory />
       </div>
     </section>
