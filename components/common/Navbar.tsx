@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Home, LogOut, Search, SlidersHorizontal, User, X } from "lucide-react";
+import { Home, LogOut, Search, SlidersHorizontal, User, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -203,18 +203,20 @@ export function Navbar() {
             />
           ) : isAuthenticated ? (
             <>
+              <Link href="/subscription">
               <Button className="hidden h-8 rounded-full bg-[#00EF01] px-4 text-sm font-medium text-black hover:bg-[#1ed760]/90 sm:flex sm:h-9 sm:px-5 sm:text-base">
                 Explore Premium
               </Button>
+              </Link>
 
-              <Button
+              {/* <Button
                 size="icon"
                 variant="ghost"
                 aria-label="Notifications"
                 className="size-10 rounded-full bg-[#333333] text-white hover:bg-white/10 hover:text-white sm:size-9"
               >
                 <Bell className="size-6" />
-              </Button>
+              </Button> */}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

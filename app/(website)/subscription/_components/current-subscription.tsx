@@ -2,22 +2,22 @@ import { Crown } from "lucide-react";
 
 const CurrentSubscription = () => {
   return (
-    <div className="flex flex-col gap-4 rounded-[8px] border border-[#004D19] bg-[#102516] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex justify-between items-center gap-4 rounded-[12px] border border-[#006400] bg-[#1ED7600D] px-2 md:px-3 lg:px-4 py-3 md:py-4 lg:py-5">
       <div className="flex items-center gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#073F18] text-primary">
-          <Crown className="size-5" />
+        <div className="flex size-9 md:size-10 shrink-0 items-center justify-center rounded-full bg-[#073F18] text-primary">
+          <Crown className="size-4 md:size-5" />
         </div>
         <div>
-          <h2 className="text-[13px] font-semibold leading-[120%] text-white sm:text-sm">
+          <h2 className="text-sm md:text-base lg:text-lg font-bold leading-[120%] text-white">
             You&apos;re on Beatbox Premium
           </h2>
-          <p className="pt-1 text-[11px] font-normal leading-[120%] text-[#BDBDBD] sm:text-xs">
+          <p className="pt-1 md:pt-2 text-xs md:text-sm font-medium leading-[120%] text-[#8C8C8C]">
             Next billing on July 1, 2026-$9.99
           </p>
         </div>
       </div>
 
-      <span className="w-fit rounded-full border border-[#8A8A8A] px-4 py-1.5 text-[10px] font-medium leading-none text-[#D8D8D8]">
+      <span className="w-fit rounded-full border border-[#B0B0B0] px-4 py-1.5 text-xs md:text-sm font-normal leading-[120%] text-[#B0B0B0]">
         On Going
       </span>
     </div>
