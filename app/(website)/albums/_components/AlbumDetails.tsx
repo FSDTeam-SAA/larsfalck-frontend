@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  CirclePlus,
   Download,
   MoreHorizontal,
   Pause,
@@ -16,6 +15,8 @@ import {
   type PlayerTrack,
   usePlayer,
 } from "@/components/providers/PlayerProvider";
+import { FavoriteAlbumButton } from "@/components/common/FavoriteAlbumButton";
+import { FavoriteSongButton } from "@/components/common/FavoriteSongButton";
 import { cn } from "@/lib/utils";
 
 type AlbumArtist = {
@@ -211,13 +212,7 @@ export function AlbumDetails({ details }: AlbumDetailsProps) {
             />
           </div>
 
-          <button
-            type="button"
-            aria-label="Save album"
-            className="inline-flex size-8 items-center justify-center rounded text-[#D0D0D0] transition hover:bg-white/5 hover:text-white"
-          >
-            <CirclePlus className="size-5" />
-          </button>
+          <FavoriteAlbumButton albumId={album._id} albumName={album.name} />
         </div>
 
         <div className="mt-8">
@@ -294,13 +289,7 @@ export function AlbumDetails({ details }: AlbumDetailsProps) {
                       {song.playCount.toLocaleString()}
                     </span>
 
-                    <button
-                      type="button"
-                      aria-label={`Add ${song.name}`}
-                      className="inline-flex size-6 items-center justify-center rounded text-[#D0D0D0] transition hover:bg-white/5 hover:text-white"
-                    >
-                      <CirclePlus className="size-4" />
-                    </button>
+                    <FavoriteSongButton songId={song._id} songName={song.name} />
 
                     <a
                       href={song.audioFile}

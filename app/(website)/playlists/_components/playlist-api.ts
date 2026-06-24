@@ -12,6 +12,15 @@ export type Playlist = {
   updatedAt: string;
 };
 
+export type PlaylistOwner =
+  | string
+  | {
+      _id: string;
+      name?: string;
+      email?: string;
+      profileImage?: string;
+    };
+
 export type SongArtist = {
   _id: string;
   name: string;
@@ -27,14 +36,25 @@ export type SongAlbum = {
 export type Song = {
   _id: string;
   name: string;
-  artists: SongArtist[];
-  albums: SongAlbum[];
+  artists?: SongArtist[];
+  albums?: SongAlbum[];
+  genres?: Array<{
+    _id: string;
+    name: string;
+  }>;
   audioFile?: string;
   coverImage?: string;
   duration?: number;
+  playCount?: number;
+  releaseDate?: string | null;
   status?: string;
   createdAt?: string;
   updatedAt?: string;
+};
+
+export type PlaylistDetailsData = Omit<Playlist, "owner" | "songs"> & {
+  owner: PlaylistOwner;
+  songs: Array<string | Song>;
 };
 
 type ApiResponse<T> = {
@@ -50,6 +70,12 @@ type MyPlaylistsData = {
 type SongsData = {
   songs?: Song[];
 };
+
+type SongDetailsData =
+  | Song
+  | {
+      song?: Song;
+    };
 
 type CreatePlaylistData =
   | Playlist
@@ -95,6 +121,27 @@ export async function getMyPlaylists(token: string): Promise<Playlist[]> {
   return Array.isArray(result.data?.playlists) ? result.data.playlists : [];
 }
 
+export async function getPlaylistDetails(
+  playlistId: string,
+  token?: string,
+): Promise<PlaylistDetailsData> {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/playlist/${encodeURIComponent(
+      playlistId,
+    )}`,
+    {
+      headers: getAuthHeaders(token),
+    },
+  );
+  const result = (await response.json()) as ApiResponse<PlaylistDetailsData>;
+
+  if (!response.ok || !result.success || !result.data?._id) {
+    throw new Error(result.message || "Could not load playlist");
+  }
+
+  return result.data;
+}
+
 export async function getSongs(token?: string): Promise<Song[]> {
   const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/song`, {
     headers: getAuthHeaders(token),
@@ -106,6 +153,30 @@ export async function getSongs(token?: string): Promise<Song[]> {
   }
 
   return Array.isArray(result.data?.songs) ? result.data.songs : [];
+}
+
+export async function getSongDetails(
+  songId: string,
+  token?: string,
+): Promise<Song> {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/song/${encodeURIComponent(songId)}`,
+    {
+      headers: getAuthHeaders(token),
+    },
+  );
+  const result = (await response.json()) as ApiResponse<SongDetailsData>;
+  let song: Song | undefined;
+
+  if (result.data) {
+    song = "_id" in result.data ? result.data : result.data.song;
+  }
+
+  if (!response.ok || !result.success || !song?._id) {
+    throw new Error(result.message || "Could not load song");
+  }
+
+  return song;
 }
 
 export async function createPlaylist(
@@ -190,11 +261,11 @@ export function removeSongsFromPlaylist(
 }
 
 export function getSongArtists(song: Song) {
-  return song.artists.map((artist) => artist.name).join(", ") || "Unknown";
+  return song.artists?.map((artist) => artist.name).join(", ") || "Unknown";
 }
 
 export function getSongAlbum(song: Song) {
-  return song.albums[0]?.name || "Single";
+  return song.albums?.[0]?.name || song.genres?.[0]?.name || "Single";
 }
 
 export function formatDuration(duration = 0) {

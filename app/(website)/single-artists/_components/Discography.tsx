@@ -87,6 +87,7 @@ export default function Discography({
             singles.map((single) => (
               <MusicCard
                 key={single._id}
+                href={`/single-song/${encodeURIComponent(single._id)}`}
                 image={single.coverImage || "/albam.png"}
                 title={single.name}
                 artist={getArtistNames(single.artists, artistName)}

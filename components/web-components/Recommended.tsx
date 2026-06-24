@@ -77,7 +77,7 @@ export function Recommended({ songs }: RecommendedProps) {
           {items.map((song) => (
             <MusicCard
               key={song.id}
-              href="#"
+              href={`/single-song/${encodeURIComponent(song.id)}`}
               image={song.image}
               title={song.title}
               artist={song.artist}

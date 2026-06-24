@@ -28,11 +28,14 @@ import {
   formatDuration,
   formatTotalDuration,
   getMyPlaylists,
+  getPlaylistDetails,
   getSongAlbum,
   getSongArtists,
   getSongs,
   removeSongsFromPlaylist,
   type Playlist,
+  type PlaylistOwner,
+  type Song,
 } from "./playlist-api";
 
 type PlaylistDetailsProps = {
@@ -83,6 +86,18 @@ function updatePlaylistSongIds(
   });
 }
 
+function isSong(value: string | Song): value is Song {
+  return typeof value !== "string";
+}
+
+function getOwnerId(owner: PlaylistOwner | undefined) {
+  return typeof owner === "string" ? owner : owner?._id;
+}
+
+function getOwnerName(owner: PlaylistOwner | undefined, fallback: string) {
+  return typeof owner === "object" && owner.name ? owner.name : fallback;
+}
+
 export function PlaylistDetails({
   playlistId,
   title,
@@ -97,15 +112,24 @@ export function PlaylistDetails({
     ?.accessToken;
   const isAuthenticated = status === "authenticated" && Boolean(token);
   const playlistsQueryKey = ["my-playlists", token] as const;
+  const playlistQueryKey = ["playlist", playlistId, token || "public"] as const;
 
-  const {
-    data: playlists = [],
-    isPending: isPlaylistsPending,
-    error: playlistsError,
-  } = useQuery({
+  const { data: playlists = [] } = useQuery({
     queryKey: playlistsQueryKey,
     queryFn: () => getMyPlaylists(token as string),
     enabled: isAuthenticated,
+    staleTime: 1000 * 60 * 5,
+    retry: false,
+  });
+
+  const {
+    data: playlistDetails,
+    isPending: isPlaylistPending,
+    error: playlistError,
+  } = useQuery({
+    queryKey: playlistQueryKey,
+    queryFn: () => getPlaylistDetails(playlistId, token),
+    enabled: status !== "loading",
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
@@ -122,15 +146,32 @@ export function PlaylistDetails({
     retry: false,
   });
 
-  const playlist = useMemo(
+  const fallbackPlaylist = useMemo(
     () => playlists.find((item) => item._id === playlistId),
     [playlistId, playlists],
   );
-  const playlistSongIds = playlist?.songs ?? [];
+  const playlist = playlistDetails ?? fallbackPlaylist;
+  const playlistSongsData = playlist?.songs ?? [];
+  const embeddedPlaylistSongs = useMemo(
+    () => playlistSongsData.filter(isSong),
+    [playlistSongsData],
+  );
+  const hasEmbeddedSongs = embeddedPlaylistSongs.length > 0;
+  const playlistSongIds = useMemo(
+    () =>
+      playlistSongsData.map((song) =>
+        typeof song === "string" ? song : song._id,
+      ),
+    [playlistSongsData],
+  );
+  const canEditPlaylist =
+    isAuthenticated && getOwnerId(playlist?.owner) === session?.user?.id;
 
   const songsById = useMemo(() => {
-    return new Map(songs.map((song) => [song._id, song]));
-  }, [songs]);
+    return new Map(
+      [...songs, ...embeddedPlaylistSongs].map((song) => [song._id, song]),
+    );
+  }, [embeddedPlaylistSongs, songs]);
 
   const playlistSongs = useMemo(
     () =>
@@ -221,6 +262,7 @@ export function PlaylistDetails({
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: playlistsQueryKey });
+      void queryClient.invalidateQueries({ queryKey: playlistQueryKey });
     },
   });
 
@@ -248,25 +290,14 @@ export function PlaylistDetails({
 
   if (
     status === "loading" ||
-    isSongsPending ||
-    (isAuthenticated && isPlaylistsPending)
+    isPlaylistPending ||
+    (isSongsPending && !hasEmbeddedSongs)
   ) {
     return <PlaylistDetailsSkeleton />;
   }
 
-  if (!isAuthenticated) {
-    return (
-      <section className="rounded-xl bg-[#FFFFFF1A] px-4 py-16 text-center text-white">
-        <h1 className="text-xl font-semibold">Please sign in</h1>
-        <p className="mt-2 text-sm text-[#A8A8A8]">
-          Sign in to add songs to this playlist.
-        </p>
-      </section>
-    );
-  }
-
-  if (playlistsError || songsError) {
-    const error = playlistsError || songsError;
+  if (playlistError || (songsError && !hasEmbeddedSongs)) {
+    const error = playlistError || songsError;
 
     return (
       <section className="rounded-xl bg-[#FFFFFF1A] px-4 py-16 text-center text-white">
@@ -300,7 +331,7 @@ export function PlaylistDetails({
             </h1>
             <p className="mt-3 text-xs text-[#A8A8A8] sm:text-base">
               <span className="font-semibold text-white">
-                {session?.user?.name || owner}
+                {getOwnerName(playlist?.owner, session?.user?.name || owner)}
               </span>
               <span aria-hidden="true"> · </span>
               {metadata}
@@ -436,93 +467,95 @@ export function PlaylistDetails({
           )}
         </div>
 
-        <div className="mt-5 sm:mt-7">
-          <h2 className="text-lg font-semibold sm:text-3xl">
-            Let&apos;s find something for your playlist
-          </h2>
+        {canEditPlaylist && (
+          <div className="mt-5 sm:mt-7">
+            <h2 className="text-lg font-semibold sm:text-3xl">
+              Let&apos;s find something for your playlist
+            </h2>
 
-          <div className="relative mt-4 w-full max-w-[500px]">
-            <Search
-              aria-hidden="true"
-              className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#A8A8A8]"
-            />
-            <Input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              aria-label="Search songs"
-              placeholder="Search for songs..."
-              className="h-12 rounded-full border-0 bg-[#333333] pl-9 pr-4 text-sm text-white placeholder:text-[#A8A8A8] focus-visible:ring-[#00EF01]/40 dark:bg-[#393939]"
-            />
-          </div>
+            <div className="relative mt-4 w-full max-w-[500px]">
+              <Search
+                aria-hidden="true"
+                className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#A8A8A8]"
+              />
+              <Input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                aria-label="Search songs"
+                placeholder="Search for songs..."
+                className="h-12 rounded-full border-0 bg-[#333333] pl-9 pr-4 text-sm text-white placeholder:text-[#A8A8A8] focus-visible:ring-[#00EF01]/40 dark:bg-[#393939]"
+              />
+            </div>
 
-          <div className="mt-5">
-            <h2 className="text-xl font-medium sm:text-2xl">Recommended</h2>
-            <p className="mt-1 text-xs text-[#8A8A8A] sm:text-sm">
-              Based on your listening
-            </p>
+            <div className="mt-5">
+              <h2 className="text-xl font-medium sm:text-2xl">Recommended</h2>
+              <p className="mt-1 text-xs text-[#8A8A8A] sm:text-sm">
+                Based on your listening
+              </p>
 
-            <div className="mt-3 space-y-1">
-              {filteredSongs.map((song, index) => {
-                const isAdded = playlistSongIds.includes(song._id);
-                const isSaving =
-                  songMutation.isPending &&
-                  songMutation.variables?.songId === song._id;
+              <div className="mt-3 space-y-1">
+                {filteredSongs.map((song, index) => {
+                  const isAdded = playlistSongIds.includes(song._id);
+                  const isSaving =
+                    songMutation.isPending &&
+                    songMutation.variables?.songId === song._id;
 
-                return (
-                  <div
-                    key={song._id}
-                    className="grid grid-cols-[20px_32px_minmax(0,1fr)_auto] items-center gap-2 rounded-md px-1 py-1.5 transition-colors hover:bg-white/5 sm:grid-cols-[24px_36px_minmax(0,1fr)_auto] sm:gap-2.5"
-                  >
-                    <span className="text-center text-xs text-[#D4D4D4] sm:text-sm">
-                      {index + 1}
-                    </span>
-
-                    <div className="relative aspect-[533/620] w-8 overflow-hidden rounded-sm bg-white/5 sm:w-9">
-                      <Image
-                        src={song.coverImage || "/albam.png"}
-                        alt=""
-                        fill
-                        sizes="40px"
-                        className="object-cover"
-                      />
-                    </div>
-
-                    <div className="min-w-0">
-                      <h3 className="truncate text-sm font-medium text-white sm:text-base">
-                        {song.name}
-                      </h3>
-                      <p className="truncate text-xs text-[#A8A8A8]">
-                        {getSongArtists(song)}
-                      </p>
-                    </div>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      aria-pressed={isAdded}
-                      disabled={songMutation.isPending}
-                      onClick={() => handleSongAction(song._id, isAdded)}
-                      className={cn(
-                        "h-7 min-w-16 rounded-full border-white/80 bg-transparent px-3 text-xs text-white hover:border-white hover:bg-white sm:min-w-20",
-                        isAdded &&
-                          "border-red-500 text-red-500 bg-transparent hover:border-red-600 hover:text-red-600 hover:bg-red-500/10",
-                      )}
+                  return (
+                    <div
+                      key={song._id}
+                      className="grid grid-cols-[20px_32px_minmax(0,1fr)_auto] items-center gap-2 rounded-md px-1 py-1.5 transition-colors hover:bg-white/5 sm:grid-cols-[24px_36px_minmax(0,1fr)_auto] sm:gap-2.5"
                     >
-                      {isSaving ? "Saving..." : isAdded ? "Remove" : "Add"}
-                    </Button>
-                  </div>
-                );
-              })}
+                      <span className="text-center text-xs text-[#D4D4D4] sm:text-sm">
+                        {index + 1}
+                      </span>
 
-              {filteredSongs.length === 0 && (
-                <p className="py-8 text-center text-sm text-[#A8A8A8]">
-                  No matching songs found.
-                </p>
-              )}
+                      <div className="relative aspect-[533/620] w-8 overflow-hidden rounded-sm bg-white/5 sm:w-9">
+                        <Image
+                          src={song.coverImage || "/albam.png"}
+                          alt=""
+                          fill
+                          sizes="40px"
+                          className="object-cover"
+                        />
+                      </div>
+
+                      <div className="min-w-0">
+                        <h3 className="truncate text-sm font-medium text-white sm:text-base">
+                          {song.name}
+                        </h3>
+                        <p className="truncate text-xs text-[#A8A8A8]">
+                          {getSongArtists(song)}
+                        </p>
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        aria-pressed={isAdded}
+                        disabled={songMutation.isPending}
+                        onClick={() => handleSongAction(song._id, isAdded)}
+                        className={cn(
+                          "h-7 min-w-16 rounded-full border-white/80 bg-transparent px-3 text-xs text-white hover:border-white hover:bg-white sm:min-w-20",
+                          isAdded &&
+                            "border-red-500 text-red-500 bg-transparent hover:border-red-600 hover:text-red-600 hover:bg-red-500/10",
+                        )}
+                      >
+                        {isSaving ? "Saving..." : isAdded ? "Remove" : "Add"}
+                      </Button>
+                    </div>
+                  );
+                })}
+
+                {filteredSongs.length === 0 && (
+                  <p className="py-8 text-center text-sm text-[#A8A8A8]">
+                    No matching songs found.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
   );
