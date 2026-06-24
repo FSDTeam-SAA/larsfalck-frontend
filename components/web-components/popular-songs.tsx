@@ -154,8 +154,14 @@ export function PopularSongs({ songs }: PopularSongsProps) {
           return (
             <article
               key={song.id}
-              className="group min-w-0 rounded-lg p-1.5 transition-colors duration-200 hover:bg-[#212121] sm:p-2"
+              className="group relative min-w-0 rounded-lg p-1.5 transition-colors duration-200 hover:bg-[#212121] sm:p-2"
             >
+              <Link
+                href={`/single-song/${encodeURIComponent(song.id)}`}
+                aria-label={`Open ${song.title}`}
+                className="absolute inset-0 z-10 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00EF01] focus-visible:ring-offset-2 focus-visible:ring-offset-[#181818]"
+              />
+
               <div className="relative aspect-[533/620] w-full overflow-hidden rounded-md bg-white/5">
                 <Image
                   src={song.image}
@@ -175,7 +181,7 @@ export function PopularSongs({ songs }: PopularSongsProps) {
                       : `Play ${song.title}`
                   }
                   className={cn(
-                    "absolute bottom-3 right-3 inline-flex size-12 translate-y-2 items-center justify-center rounded-full bg-[#00EF01] text-black opacity-0 shadow-lg transition duration-200 hover:scale-105 hover:bg-[#00D801] group-hover:translate-y-0 group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40",
+                    "absolute bottom-3 right-3 z-20 inline-flex size-12 translate-y-2 items-center justify-center rounded-full bg-[#00EF01] text-black opacity-0 shadow-lg transition duration-200 hover:scale-105 hover:bg-[#00D801] group-hover:translate-y-0 group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40",
                     isCurrentTrack && "translate-y-0 opacity-100",
                   )}
                 >

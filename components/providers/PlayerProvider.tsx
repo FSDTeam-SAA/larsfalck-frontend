@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSession } from "next-auth/react";
 
 export type RepeatMode = "off" | "all" | "one";
 
@@ -43,11 +44,18 @@ type PlayerContextValue = {
 
 const PlayerContext = React.createContext<PlayerContextValue | null>(null);
 
-async function recordSongPlay(songId: string) {
+async function recordSongPlay(songId: string, token?: string) {
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/song/${encodeURIComponent(songId)}/play`,
-      { method: "POST" },
+      {
+        method: "POST",
+        headers: token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : undefined,
+      },
     );
 
     if (!response.ok) {
@@ -73,6 +81,8 @@ function shuffleIndexes(indexes: number[]) {
 }
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
+  const { data: session } = useSession();
+  const token = session?.user?.accessToken;
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const [queue, setQueue] = React.useState<PlayerTrack[]>([]);
   const [order, setOrder] = React.useState<number[]>([]);
@@ -87,21 +97,24 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const currentTrack = queue[order[queuePosition]] ?? null;
 
-  const loadAndPlay = React.useCallback((track: PlayerTrack) => {
-    const audio = audioRef.current;
-    if (!audio) return;
+  const loadAndPlay = React.useCallback(
+    (track: PlayerTrack) => {
+      const audio = audioRef.current;
+      if (!audio) return;
 
-    audio.src = track.audioUrl;
-    audio.load();
-    setCurrentTime(0);
-    setDuration(track.duration || 0);
-    setIsPlaying(true);
+      audio.src = track.audioUrl;
+      audio.load();
+      setCurrentTime(0);
+      setDuration(track.duration || 0);
+      setIsPlaying(true);
 
-    void audio
-      .play()
-      .then(() => recordSongPlay(track.id))
-      .catch(() => setIsPlaying(false));
-  }, []);
+      void audio
+        .play()
+        .then(() => recordSongPlay(track.id, token))
+        .catch(() => setIsPlaying(false));
+    },
+    [token],
+  );
 
   const playQueue = React.useCallback(
     (tracks: PlayerTrack[], options: PlayQueueOptions = {}) => {
@@ -158,14 +171,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         .play()
         .then(() => {
           if (isRestartingEndedTrack) {
-            return recordSongPlay(currentTrack.id);
+            return recordSongPlay(currentTrack.id, token);
           }
         })
         .catch(() => setIsPlaying(false));
     } else {
       audio.pause();
     }
-  }, [currentTrack]);
+  }, [currentTrack, token]);
 
   const playNext = React.useCallback(() => {
     if (queue.length === 0 || order.length === 0) return;
@@ -209,7 +222,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       setCurrentTime(0);
 
       if (!audio.paused && currentTrack) {
-        void recordSongPlay(currentTrack.id);
+        void recordSongPlay(currentTrack.id, token);
       }
       return;
     }
@@ -225,7 +238,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
     setQueuePosition(previousPosition);
     loadAndPlay(previousTrack);
-  }, [currentTrack, loadAndPlay, order, queue, queuePosition, repeatMode]);
+  }, [currentTrack, loadAndPlay, order, queue, queuePosition, repeatMode, token]);
 
   const seek = React.useCallback((time: number) => {
     const audio = audioRef.current;
