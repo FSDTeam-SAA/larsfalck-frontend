@@ -68,6 +68,7 @@ const fallbackSongs = [
 
 type PopularSongsProps = {
   songs?: HomeSong[];
+  showAll?: boolean;
 };
 
 type PopularSongItem = {
@@ -88,7 +89,7 @@ function getSongType(song: HomeSong) {
   return song.albums?.[0]?.name || song.genres?.[0]?.name || "Song";
 }
 
-export function PopularSongs({ songs }: PopularSongsProps) {
+export function PopularSongs({ songs, showAll = false }: PopularSongsProps) {
   const { currentTrack, isPlaying, playQueue, togglePlay } = usePlayer();
   const items = useMemo<PopularSongItem[]>(
     () =>
@@ -109,7 +110,7 @@ export function PopularSongs({ songs }: PopularSongsProps) {
       })),
     [songs],
   );
-  const visibleItems = items.slice(0, 5);
+  const visibleItems = showAll ? items : items.slice(0, 5);
   const playerTracks = useMemo<PlayerTrack[]>(
     () =>
       visibleItems.map((song) => ({
@@ -138,12 +139,14 @@ export function PopularSongs({ songs }: PopularSongsProps) {
         <h2 className="text-xl font-semibold text-[#FFFFFF] sm:text-3xl lg:text-4xl">
           Popular Songs
         </h2>
-        <Link
-          href="/songs"
-          className="text-sm font-medium text-[#A8A8A8] hover:text-white sm:text-lg"
-        >
-          Show all
-        </Link>
+        {!showAll && (
+          <Link
+            href="/songs"
+            className="text-sm font-medium text-[#A8A8A8] hover:text-white sm:text-lg"
+          >
+            Show all
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
