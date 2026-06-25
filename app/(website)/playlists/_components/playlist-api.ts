@@ -69,6 +69,7 @@ type MyPlaylistsData = {
 
 type SongsData = {
   songs?: Song[];
+  paginationInfo?: SongsPaginationInfo;
 };
 
 type SongDetailsData =
@@ -91,6 +92,25 @@ type PlaylistMutationData =
 
 export type CreatePlaylistInput = {
   name: string;
+};
+
+export type SongsPaginationInfo = {
+  currentPage: number;
+  totalPages: number;
+  totalData: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+};
+
+export type SongsPage = {
+  songs: Song[];
+  paginationInfo?: SongsPaginationInfo;
+};
+
+export type GetSongsParams = {
+  page?: number;
+  limit?: number;
+  search?: string;
 };
 
 function getAuthHeaders(token?: string) {
@@ -142,8 +162,25 @@ export async function getPlaylistDetails(
   return result.data;
 }
 
-export async function getSongs(token?: string): Promise<Song[]> {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/song`, {
+function getSongsUrl(params?: GetSongsParams) {
+  const searchParams = new URLSearchParams();
+
+  if (params?.page) searchParams.set("page", String(params.page));
+  if (params?.limit) searchParams.set("limit", String(params.limit));
+  if (params?.search) searchParams.set("search", params.search);
+
+  const queryString = searchParams.toString();
+
+  return `${process.env.NEXT_PUBLIC_BACKEND_URL}/song${
+    queryString ? `?${queryString}` : ""
+  }`;
+}
+
+export async function getSongsPage(
+  token?: string,
+  params?: GetSongsParams,
+): Promise<SongsPage> {
+  const response = await fetch(getSongsUrl(params), {
     headers: getAuthHeaders(token),
   });
   const result = (await response.json()) as ApiResponse<SongsData>;
@@ -152,7 +189,16 @@ export async function getSongs(token?: string): Promise<Song[]> {
     throw new Error(result.message || "Could not load songs");
   }
 
-  return Array.isArray(result.data?.songs) ? result.data.songs : [];
+  return {
+    songs: Array.isArray(result.data?.songs) ? result.data.songs : [],
+    paginationInfo: result.data?.paginationInfo,
+  };
+}
+
+export async function getSongs(token?: string): Promise<Song[]> {
+  const result = await getSongsPage(token);
+
+  return result.songs;
 }
 
 export async function getSongDetails(
@@ -208,6 +254,25 @@ export async function createPlaylist(
   }
 
   return isPlaylist(result.data) ? result.data : null;
+}
+
+export async function deletePlaylist(token: string, playlistId: string) {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/playlist/${encodeURIComponent(
+      playlistId,
+    )}`,
+    {
+      method: "DELETE",
+      headers: getAuthHeaders(token),
+    },
+  );
+  const result = (await response.json()) as ApiResponse<unknown>;
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || "Could not delete playlist");
+  }
+
+  return result;
 }
 
 async function updatePlaylistSongs(

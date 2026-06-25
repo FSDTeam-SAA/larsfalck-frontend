@@ -16,7 +16,7 @@ import {
 
 import HomeSectionsSkeleton from "./HomeSectionsSkeleton";
 
-type HomeSectionsData = {
+export type HomeSectionsData = {
   popularSongs: HomeSong[];
   popularArtists: HomeArtist[];
   popularAlbums: HomeAlbum[];
@@ -36,7 +36,9 @@ const emptySections: HomeSectionsData = {
   recommended: [],
 };
 
-async function getHomeSections(token?: string): Promise<HomeSectionsData> {
+export async function getHomeSections(
+  token?: string,
+): Promise<HomeSectionsData> {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BACKEND_URL}/home/sections`,
     {

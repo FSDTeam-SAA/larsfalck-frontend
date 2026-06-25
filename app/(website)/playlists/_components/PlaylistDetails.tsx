@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   CircleCheck,
   Clock3,
@@ -10,33 +11,58 @@ import {
   Play,
   Search,
   Shuffle,
+  Trash2,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import {
   type PlayerTrack,
   usePlayer,
 } from "@/components/providers/PlayerProvider";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 import PlaylistDetailsSkeleton from "./PlaylistDetailsSkeleton";
 import {
   addSongsToPlaylist,
+  deletePlaylist,
   formatDuration,
   formatTotalDuration,
   getMyPlaylists,
   getPlaylistDetails,
   getSongAlbum,
   getSongArtists,
-  getSongs,
+  getSongsPage,
   removeSongsFromPlaylist,
   type Playlist,
   type PlaylistOwner,
   type Song,
 } from "./playlist-api";
+
+const SONGS_PAGE_LIMIT = 10;
 
 type PlaylistDetailsProps = {
   playlistId: string;
@@ -104,7 +130,10 @@ export function PlaylistDetails({
   owner = "David Park",
 }: PlaylistDetailsProps) {
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query.trim());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { data: session, status } = useSession();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { currentTrack, isPlaying, isShuffle, playQueue, togglePlay } =
     usePlayer();
@@ -135,16 +164,34 @@ export function PlaylistDetails({
   });
 
   const {
-    data: songs = [],
+    data: songsData,
     isPending: isSongsPending,
     error: songsError,
-  } = useQuery({
-    queryKey: ["songs", token],
-    queryFn: () => getSongs(token),
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["songs", token || "public", deferredQuery],
+    queryFn: ({ pageParam }) =>
+      getSongsPage(token, {
+        page: pageParam,
+        limit: SONGS_PAGE_LIMIT,
+        search: deferredQuery || undefined,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.paginationInfo?.hasNextPage
+        ? lastPage.paginationInfo.currentPage + 1
+        : undefined,
     enabled: status !== "loading",
     staleTime: 1000 * 60 * 5,
+    placeholderData: keepPreviousData,
     retry: false,
   });
+  const recommendedSongs = useMemo(
+    () => songsData?.pages.flatMap((page) => page.songs) ?? [],
+    [songsData],
+  );
 
   const fallbackPlaylist = useMemo(
     () => playlists.find((item) => item._id === playlistId),
@@ -167,11 +214,31 @@ export function PlaylistDetails({
   const canEditPlaylist =
     isAuthenticated && getOwnerId(playlist?.owner) === session?.user?.id;
 
+  const {
+    data: playlistLookupSongs = [],
+    isPending: isPlaylistLookupPending,
+    error: playlistLookupError,
+  } = useQuery({
+    queryKey: ["songs", "playlist-lookup", token || "public"],
+    queryFn: async () => {
+      const result = await getSongsPage(token, { limit: 1000 });
+
+      return result.songs;
+    },
+    enabled:
+      status !== "loading" && !hasEmbeddedSongs && playlistSongIds.length > 0,
+    staleTime: 1000 * 60 * 5,
+    retry: false,
+  });
+
   const songsById = useMemo(() => {
     return new Map(
-      [...songs, ...embeddedPlaylistSongs].map((song) => [song._id, song]),
+      [...playlistLookupSongs, ...embeddedPlaylistSongs].map((song) => [
+        song._id,
+        song,
+      ]),
     );
-  }, [embeddedPlaylistSongs, songs]);
+  }, [embeddedPlaylistSongs, playlistLookupSongs]);
 
   const playlistSongs = useMemo(
     () =>
@@ -180,23 +247,6 @@ export function PlaylistDetails({
         .filter((song): song is NonNullable<typeof song> => Boolean(song)),
     [playlistSongIds, songsById],
   );
-
-  const filteredSongs = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-
-    if (!normalizedQuery) return songs;
-
-    return songs.filter((song) => {
-      const artists = getSongArtists(song).toLowerCase();
-      const album = getSongAlbum(song).toLowerCase();
-
-      return (
-        song.name.toLowerCase().includes(normalizedQuery) ||
-        artists.includes(normalizedQuery) ||
-        album.includes(normalizedQuery)
-      );
-    });
-  }, [query, songs]);
 
   const playerTracks = useMemo<PlayerTrack[]>(
     () =>
@@ -219,7 +269,7 @@ export function PlaylistDetails({
   const coverImage =
     playlist?.coverImage ||
     playlistSongs[0]?.coverImage ||
-    songs[0]?.coverImage ||
+    recommendedSongs[0]?.coverImage ||
     "/albam.png";
   const totalDuration = playlistSongs.reduce(
     (total, song) => total + (song.duration || 0),
@@ -266,6 +316,28 @@ export function PlaylistDetails({
     },
   });
 
+  const deletePlaylistMutation = useMutation({
+    mutationFn: () => {
+      if (!token) {
+        throw new Error("Please sign in to delete this playlist.");
+      }
+
+      return deletePlaylist(token, playlistId);
+    },
+    onSuccess: (result) => {
+      toast.success(result.message || "Playlist deleted");
+      setDeleteDialogOpen(false);
+      void queryClient.invalidateQueries({ queryKey: playlistsQueryKey });
+      queryClient.removeQueries({ queryKey: playlistQueryKey });
+      router.push("/playlists");
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Could not delete playlist",
+      );
+    },
+  });
+
   function handlePlayPlaylist() {
     if (isCurrentPlaylist) {
       togglePlay();
@@ -291,13 +363,13 @@ export function PlaylistDetails({
   if (
     status === "loading" ||
     isPlaylistPending ||
-    (isSongsPending && !hasEmbeddedSongs)
+    (isPlaylistLookupPending && !hasEmbeddedSongs && playlistSongIds.length > 0)
   ) {
     return <PlaylistDetailsSkeleton />;
   }
 
-  if (playlistError || (songsError && !hasEmbeddedSongs)) {
-    const error = playlistError || songsError;
+  if (playlistError || (playlistLookupError && !hasEmbeddedSongs)) {
+    const error = playlistError || playlistLookupError;
 
     return (
       <section className="rounded-xl bg-[#FFFFFF1A] px-4 py-16 text-center text-white">
@@ -382,15 +454,27 @@ export function PlaylistDetails({
             <Shuffle className="size-5" />
           </Button>
 
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            aria-label="More playlist options"
-            className="size-8 text-[#A8A8A8] hover:bg-white/5 hover:text-white"
-          >
-            <MoreHorizontal className="size-5" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="More playlist options"
+                className="inline-flex size-8 items-center justify-center rounded-lg text-[#A8A8A8] transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00EF01] focus-visible:ring-offset-2 focus-visible:ring-offset-[#181818]"
+              >
+                <MoreHorizontal className="size-5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-44">
+              <DropdownMenuItem
+                disabled={deletePlaylistMutation.isPending}
+                onSelect={() => setDeleteDialogOpen(true)}
+                className="text-red-400 focus:bg-red-500/10 focus:text-red-300"
+              >
+                <Trash2 className="size-4" />
+                Delete playlist
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <div className="mt-4">
@@ -495,7 +579,7 @@ export function PlaylistDetails({
               </p>
 
               <div className="mt-3 space-y-1">
-                {filteredSongs.map((song, index) => {
+                {recommendedSongs.map((song, index) => {
                   const isAdded = playlistSongIds.includes(song._id);
                   const isSaving =
                     songMutation.isPending &&
@@ -547,16 +631,75 @@ export function PlaylistDetails({
                   );
                 })}
 
-                {filteredSongs.length === 0 && (
+                {songsError && (
+                  <p className="py-8 text-center text-sm text-red-300">
+                    {songsError instanceof Error
+                      ? songsError.message
+                      : "Unable to load songs."}
+                  </p>
+                )}
+
+                {!songsError && isSongsPending && (
+                  <p className="py-8 text-center text-sm text-[#A8A8A8]">
+                    Loading songs...
+                  </p>
+                )}
+
+                {!songsError && !isSongsPending && recommendedSongs.length === 0 && (
                   <p className="py-8 text-center text-sm text-[#A8A8A8]">
                     No matching songs found.
                   </p>
                 )}
               </div>
+
+              {hasNextPage && (
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                    className="h-8 rounded-full border-white/30 bg-transparent px-5 text-sm text-white hover:bg-white/10 hover:text-white"
+                  >
+                    {isFetchingNextPage ? "Loading..." : "More"}
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         )}
       </div>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="border border-white/10 bg-[#242424] text-white sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Delete playlist?</DialogTitle>
+            <DialogDescription className="text-[#A8A8A8]">
+              This will permanently delete {playlist?.name || title}.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="-mx-4 -mb-4 border-white/10 bg-[#1E1E1E]">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={deletePlaylistMutation.isPending}
+              className="text-white hover:bg-white/10 hover:text-white"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => deletePlaylistMutation.mutate()}
+              disabled={deletePlaylistMutation.isPending}
+              className="bg-red-500 text-white hover:bg-red-600"
+            >
+              {deletePlaylistMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
