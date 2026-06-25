@@ -74,7 +74,7 @@ function ResultSection({
 
 export default function SearchResultsClient() {
   const searchParams = useSearchParams();
-  const query = searchParams.get("q") ?? "";
+  const query = searchParams.get("q") || "";
   const typeParam = searchParams.get("type");
   const type = tabs.some((tab) => tab.value === typeParam)
     ? (typeParam as SearchType)
@@ -84,7 +84,9 @@ export default function SearchResultsClient() {
     .map((tag) => tag.trim())
     .filter(Boolean);
   const isTagSearch = tags.length > 0 || typeParam === "tags";
-  const enabled = Boolean(query.trim() || tags.length > 0 || type !== "all");
+  const enabled = Boolean(
+    (query || "").trim() || tags.length > 0 || type !== "all",
+  );
   const activeTab = tabs.find((tab) => tab.value === type);
 
   const { data, isPending, error } = useQuery({

@@ -197,7 +197,7 @@ export function Navbar() {
   const { data: tags = [], isPending: isTagsLoading } = useQuery({
     queryKey: ["tags"],
     queryFn: getTags,
-    enabled: pathname !== "/search" && (isDesktopSearchOpen || isMobileSearchOpen),
+    enabled: pathname !== "/search" && isDesktopSearchOpen,
     staleTime: 1000 * 60 * 10,
     retry: false,
   });
@@ -207,11 +207,13 @@ export function Navbar() {
   }, [isMobileSearchOpen]);
 
   function runSearch() {
-    if (!searchQuery.trim() && selectedTags.length === 0) return;
+    const normalizedQuery = searchQuery || "";
+
+    if (!normalizedQuery.trim() && selectedTags.length === 0) return;
 
     router.push(
       buildSearchHref({
-        query: searchQuery,
+        query: normalizedQuery,
         type: searchType,
         tags: selectedTags,
       }),
@@ -256,11 +258,17 @@ export function Navbar() {
   const profile = profileResponse?.data;
   const avatarImage = profile?.profileImage || "/no-user.jpg";
   const displayName = profile?.name || session?.user.name || "User";
-  const avatarFallback = displayName.trim().charAt(0).toUpperCase() || "U";
+  const avatarFallback =
+    (displayName || "User").trim().charAt(0).toUpperCase() || "U";
 
   return (
     <>
-      <header className="sticky top-0 z-50 mx-auto mt-3 flex h-16 w-full items-center justify-between gap-3 rounded-xl border-b border-white/5 bg-[#FFFFFF1A] pl-16 pr-3 sm:h-[82px] sm:px-8 lg:h-[94px] lg:px-12">
+      <header
+        className={cn(
+          "sticky top-0 z-[80] mx-auto mt-3 flex h-16 w-full items-center justify-between gap-3 rounded-xl border-b border-white/5 bg-[#FFFFFF1A] pl-16 pr-3 sm:h-[82px] sm:px-8 lg:h-[94px] lg:px-12",
+          isMobileSearchOpen && "pl-3 sm:px-8",
+        )}
+      >
         <Link
           href="/"
           aria-label="Go to homepage"
@@ -357,19 +365,8 @@ export function Navbar() {
                 onKeyDown={(event) => {
                   if (event.key === "Escape") setIsMobileSearchOpen(false);
                 }}
-                className="h-10 w-full rounded-full border border-white/10 bg-[#292929] pl-9 pr-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-[#00EF01] focus:ring-2 focus:ring-[#00EF01]/25"
+                className="h-11 w-full rounded-full border border-white/10 bg-[#292929] pl-9 pr-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-[#00EF01] focus:ring-2 focus:ring-[#00EF01]/25"
               />
-              {pathname !== "/search" && (
-                <SearchOptionsPanel
-                  activeType={searchType}
-                  selectedTags={selectedTags}
-                  tags={tags}
-                  isTagsLoading={isTagsLoading}
-                  onTypeChange={handleTypeChange}
-                  onTagToggle={handleTagToggle}
-                  onSearch={runSearch}
-                />
-              )}
             </div>
 
             <Button
@@ -388,7 +385,7 @@ export function Navbar() {
         <div
           className={cn(
             "flex shrink-0 items-center gap-2 sm:gap-3",
-            // isMobileSearchOpen && "hidden md:flex",
+            isMobileSearchOpen && "hidden md:flex",
           )}
         >
           {status === "loading" ? (
@@ -399,7 +396,7 @@ export function Navbar() {
           ) : isAuthenticated ? (
             <>
               <Link href="/subscription">
-              <Button className=" h-8 rounded-full bg-[#00EF01] px-4 text-sm font-medium text-black hover:bg-[#1ed760]/90 sm:flex sm:h-9 sm:px-5 sm:text-base">
+              <Button className="h-8 rounded-full bg-[#00EF01] px-3 text-xs font-medium text-black hover:bg-[#1ed760]/90 sm:h-9 sm:px-5 sm:text-base">
                 Explore Premium
               </Button>
               </Link>
