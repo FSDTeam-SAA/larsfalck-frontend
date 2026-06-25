@@ -388,7 +388,7 @@ export function Navbar() {
         <div
           className={cn(
             "flex shrink-0 items-center gap-2 sm:gap-3",
-            isMobileSearchOpen && "hidden md:flex",
+            // isMobileSearchOpen && "hidden md:flex",
           )}
         >
           {status === "loading" ? (
@@ -399,7 +399,7 @@ export function Navbar() {
           ) : isAuthenticated ? (
             <>
               <Link href="/subscription">
-              <Button className="hidden h-8 rounded-full bg-[#00EF01] px-4 text-sm font-medium text-black hover:bg-[#1ed760]/90 sm:flex sm:h-9 sm:px-5 sm:text-base">
+              <Button className=" h-8 rounded-full bg-[#00EF01] px-4 text-sm font-medium text-black hover:bg-[#1ed760]/90 sm:flex sm:h-9 sm:px-5 sm:text-base">
                 Explore Premium
               </Button>
               </Link>
