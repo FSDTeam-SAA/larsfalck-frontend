@@ -19,7 +19,7 @@ import {
 } from "../../../../components/ui/form";
 import { Input } from "../../../../components/ui/input";
 import { Checkbox } from "../../../../components/ui/checkbox";
-import { Label } from "../../../../components/ui/label";
+// import { Label } from "../../../../components/ui/label";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -453,7 +453,7 @@ const SignupForm = () => {
               )}
             />
 
-            <FormField
+           {/* <FormField
               control={form.control}
               name="rememberMe"
               render={({ field }) => (
@@ -484,7 +484,8 @@ const SignupForm = () => {
                   </Label>
                 </FormItem>
               )}
-            />
+            /> */}
+            
 
             <div className="pt-1 md:pt-2">
               <Button disabled={isPending} className="h-[48px] w-full rounded-[8px] font-medium text-[#333333]" type="submit">
