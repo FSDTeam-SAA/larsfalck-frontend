@@ -13,6 +13,7 @@ const formatMemberSince = (date?: string) => {
   if (!date) return "N/A";
 
   return new Intl.DateTimeFormat("en", {
+    day: "2-digit",
     month: "long",
     year: "numeric",
   }).format(new Date(date));

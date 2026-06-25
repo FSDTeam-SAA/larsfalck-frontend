@@ -91,14 +91,14 @@ const BillingHistory = () => {
         />
       ) : (
         <div className="mt-7 overflow-hidden rounded-[8px] border-[2px] border-[#333333]">
-          <div className="grid grid-cols-1 gap-3 px-4 py-4 transition-colors hover:bg-[#1E1E1E] sm:min-h-[58px] sm:grid-cols-[1.45fr_1fr_1fr_auto] sm:items-center">
+          <div className="flex items-center justify-between gap-3 px-4 py-4 transition-colors hover:bg-[#1E1E1E] sm:min-h-[58px] sm:items-center">
             <div>
               <p className="text-xs md:text-sm font-normal leading-[120%] text-white ">
                 {subscription.planId?.name || "N/A"}
               </p>
-              <p className="pt-1 text-[10px] font-normal leading-[120%] text-[#8A8A8A] md:text-[12px]">
+              {/* <p className="pt-1 text-[10px] font-normal leading-[120%] text-[#8A8A8A] md:text-[12px]">
                 {formatDate(subscription.startDate)}
-              </p>
+              </p> */}
             </div>
 
             <p className="text-xs md:text-sm font-medium leading-[120%] text-white">
@@ -112,14 +112,18 @@ const BillingHistory = () => {
               {subscription?.status === "active" ? "Paid" : "Unpaid"}
             </span>
 
-            <button
+             <p className="pt-1 text-[10px] font-normal leading-[120%] text-[#8A8A8A] md:text-[12px]">
+                {formatDate(subscription.startDate)}
+              </p>
+
+            {/* <button
               type="button"
               disabled
               className="flex w-fit items-center gap-1 text-[10px] font-normal leading-normal text-[#8A8A8A] opacity-60 md:text-xs"
             >
               <Download className="size-4" />
               Invoice
-            </button>
+            </button> */}
           </div>
         </div>
       )}

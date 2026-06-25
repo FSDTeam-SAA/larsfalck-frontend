@@ -7,7 +7,6 @@ import {
   type KeyboardEvent,
   type ClipboardEvent,
 } from "react";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -31,19 +30,25 @@ export default function OtpForm() {
   }, []);
 
   const handleChange = (index: number, value: string) => {
-    // Only allow numbers
-    if (!/^\d*$/.test(value)) return;
+    const digits = value.replace(/\D/g, "");
+    if (!digits) {
+      const newOtp = [...otp];
+      newOtp[index] = "";
+      setOtp(newOtp);
+      return;
+    }
 
-    // Update the OTP array
     const newOtp = [...otp];
-    newOtp[index] = value.slice(0, 1); // Only take the first character
-
+    digits
+      .slice(0, otp.length - index)
+      .split("")
+      .forEach((digit, offset) => {
+        newOtp[index + offset] = digit;
+      });
     setOtp(newOtp);
 
-    // Auto-focus next input if value is entered
-    if (value && index < 5 && inputRefs.current[index + 1]) {
-      inputRefs.current[index + 1]?.focus();
-    }
+    const nextIndex = Math.min(index + digits.length, otp.length - 1);
+    inputRefs.current[nextIndex]?.focus();
   };
 
   const handleKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
@@ -112,20 +117,12 @@ export default function OtpForm() {
     },
   });
 
-  const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
+  const handlePaste = (
+    index: number,
+    e: ClipboardEvent<HTMLInputElement>,
+  ) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData("text/plain").trim();
-
-    // Check if pasted content is a valid 6-digit number
-    if (/^\d{6}$/.test(pastedData)) {
-      const digits = pastedData.split("");
-      setOtp(digits);
-
-      // Focus the last input
-      if (inputRefs.current[5]) {
-        inputRefs.current[5].focus();
-      }
-    }
+    handleChange(index, e.clipboardData.getData("text").trim());
   };
 
   // handle resend otp
@@ -165,15 +162,17 @@ export default function OtpForm() {
         {/* OTP Input Fields */}
         <div className="grid grid-cols-6 gap-1 md:gap-3 lg:gap-4 w-full">
           {otp.map((digit, index) => (
-            <Input
+            <input
               key={index}
               type="text"
               inputMode="numeric"
+              autoComplete={index === 0 ? "one-time-code" : "off"}
               maxLength={1}
               value={digit}
               onChange={(e) => handleChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
-              onPaste={index === 0 ? handlePaste : undefined}
+              onPaste={(e) => handlePaste(index, e)}
+              onFocus={(e) => e.currentTarget.select()}
               ref={(el) => {
                 inputRefs.current[index] = el;
               }}
