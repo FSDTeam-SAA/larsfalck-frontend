@@ -84,10 +84,14 @@ type TagsData = {
 };
 
 type SearchParams = {
-  query?: string;
+  query?: string | null;
   type?: SearchType;
-  tags?: string[];
+  tags?: Array<string | null | undefined>;
 };
+
+function normalizeText(value: string | null | undefined) {
+  return value ?? "";
+}
 
 function getBackendUrl(path: string, params?: Record<string, string>) {
   const searchParams = new URLSearchParams(params);
@@ -114,13 +118,14 @@ export async function searchMusic({
   type = "all",
   tags = [],
 }: SearchParams): Promise<SearchResults> {
-  const trimmedQuery = query.trim();
+  const trimmedQuery = normalizeText(query).trim();
+  const cleanTags = tags.filter((tag): tag is string => Boolean(tag));
   let path = "/search";
   const params: Record<string, string> = {};
 
-  if (tags.length > 0) {
+  if (cleanTags.length > 0) {
     path = "/search/tags";
-    params.tags = tags.join(",");
+    params.tags = cleanTags.join(",");
   } else {
     if (type !== "all") path = `/search/${type}`;
     if (trimmedQuery) params.q = trimmedQuery;
@@ -142,11 +147,12 @@ export function buildSearchHref({
   tags = [],
 }: SearchParams) {
   const params = new URLSearchParams();
-  const trimmedQuery = query.trim();
+  const trimmedQuery = normalizeText(query).trim();
+  const cleanTags = tags.filter((tag): tag is string => Boolean(tag));
 
-  if (tags.length > 0) {
+  if (cleanTags.length > 0) {
     params.set("type", "tags");
-    params.set("tags", tags.join(","));
+    params.set("tags", cleanTags.join(","));
   } else {
     if (trimmedQuery) params.set("q", trimmedQuery);
     if (type !== "all") params.set("type", type);
