@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 export type RepeatMode = "off" | "all" | "one";
 
@@ -81,7 +83,8 @@ function shuffleIndexes(indexes: number[]) {
 }
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const token = session?.user?.accessToken;
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const [queue, setQueue] = React.useState<PlayerTrack[]>([]);
@@ -97,8 +100,24 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const currentTrack = queue[order[queuePosition]] ?? null;
 
+  const promptLogin = React.useCallback(() => {
+    toast.error("Please sign in to play songs.", {
+      id: "play-login-required",
+      action: {
+        label: "Sign in",
+        onClick: () => router.push("/login"),
+      },
+    });
+  }, [router]);
+
   const loadAndPlay = React.useCallback(
     (track: PlayerTrack) => {
+      if (status === "loading") return;
+      if (!token) {
+        promptLogin();
+        return;
+      }
+
       const audio = audioRef.current;
       if (!audio) return;
 
@@ -113,11 +132,17 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         .then(() => recordSongPlay(track.id, token))
         .catch(() => setIsPlaying(false));
     },
-    [token],
+    [promptLogin, status, token],
   );
 
   const playQueue = React.useCallback(
     (tracks: PlayerTrack[], options: PlayQueueOptions = {}) => {
+      if (status === "loading") return;
+      if (!token) {
+        promptLogin();
+        return;
+      }
+
       const playableTracks = tracks.filter((track) => Boolean(track.audioUrl));
       if (playableTracks.length === 0) return;
 
@@ -153,10 +178,16 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       setIsShuffle(Boolean(options.shuffle));
       loadAndPlay(playableTracks[trackIndexToPlay]);
     },
-    [loadAndPlay],
+    [loadAndPlay, promptLogin, status, token],
   );
 
   const togglePlay = React.useCallback(() => {
+    if (status === "loading") return;
+    if (!token) {
+      promptLogin();
+      return;
+    }
+
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
 
@@ -178,7 +209,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     } else {
       audio.pause();
     }
-  }, [currentTrack, token]);
+  }, [currentTrack, promptLogin, status, token]);
 
   const playNext = React.useCallback(() => {
     if (queue.length === 0 || order.length === 0) return;
@@ -317,7 +348,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         .play()
         .then(() => {
           if (currentTrack) {
-            return recordSongPlay(currentTrack.id);
+            return recordSongPlay(currentTrack.id, token);
           }
         })
         .catch(() => setIsPlaying(false));
@@ -325,7 +356,13 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
 
     playNext();
-  }, [currentTrack, playNext, repeatMode]);
+  }, [currentTrack, playNext, repeatMode, token]);
+
+  React.useEffect(() => {
+    if (status !== "unauthenticated") return;
+
+    resetPlayer();
+  }, [resetPlayer, status]);
 
   React.useEffect(() => {
     const audio = audioRef.current;

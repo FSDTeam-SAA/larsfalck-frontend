@@ -2,6 +2,7 @@
 
 import { useDeferredValue, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CircleCheck,
@@ -370,6 +371,23 @@ export function PlaylistDetails({
 
   if (playlistError || (playlistLookupError && !hasEmbeddedSongs)) {
     const error = playlistError || playlistLookupError;
+
+    if (!isAuthenticated) {
+      return (
+        <section className="rounded-xl bg-[#FFFFFF1A] px-4 py-16 text-center text-white">
+          <h1 className="text-xl font-semibold">Please sign in</h1>
+          <p className="mt-2 text-sm text-[#A8A8A8]">
+            Sign in to view this playlist and play songs.
+          </p>
+          <Button
+            asChild
+            className="mt-5 bg-[#00EF01] px-5 text-black hover:bg-[#00D801]"
+          >
+            <Link href="/login">Sign in</Link>
+          </Button>
+        </section>
+      );
+    }
 
     return (
       <section className="rounded-xl bg-[#FFFFFF1A] px-4 py-16 text-center text-white">
