@@ -5,7 +5,7 @@ const SKELETON_CARD_COUNT = 10;
 export default function ArtistsSkeleton() {
   return (
     <div
-      className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+      className="grid grid-cols-3 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
       aria-label="Loading artists"
       aria-busy="true"
     >

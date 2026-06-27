@@ -190,7 +190,7 @@ export function Navbar() {
             className="flex min-w-0 flex-1 items-center gap-2 md:hidden"
           >
             <div className="relative min-w-0 flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
+              {/* <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" /> */}
               <input
                 ref={mobileSearchInputRef}
                 type="search"
@@ -201,7 +201,7 @@ export function Navbar() {
                 onKeyDown={(event) => {
                   if (event.key === "Escape") setIsMobileSearchOpen(false);
                 }}
-                className="h-11 w-full rounded-full border border-white/10 bg-[#333333] pl-9 pr-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-[#00EF01] focus:ring-2 focus:ring-[#00EF01]/25"
+                className="h-11 w-full rounded-full border border-white/10 bg-[#000000] z-50 pl-9 pr-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-[#00EF01] focus:ring-2 focus:ring-[#00EF01]/25"
               />
             </div>
 
@@ -213,7 +213,7 @@ export function Navbar() {
               onClick={() => setIsMobileSearchOpen(false)}
               className="size-10 rounded-full bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white"
             >
-              <X className="size-5" />
+              <X className="size-5 !text-white" />
             </Button>
           </form>
         )}

@@ -71,7 +71,7 @@ const CurrentSubscription = () => {
           <Crown className="size-4 md:size-5" />
         </div>
         <div>
-          <h2 className="text-sm md:text-base lg:text-lg font-bold leading-[120%] text-white">
+          <h2 className="text-xs md:text-base lg:text-lg font-bold leading-[120%] text-white">
             {title}
           </h2>
           <p className="pt-1 md:pt-2 text-xs md:text-sm font-medium leading-[120%] text-[#8C8C8C]">
@@ -80,7 +80,7 @@ const CurrentSubscription = () => {
         </div>
       </div>
 
-      <span className="w-fit rounded-full border border-[#B0B0B0] px-2 md:px-3 lg:px-4 py-1.5 text-xs md:text-sm font-normal leading-[120%] text-[#B0B0B0]">
+      <span className="w-fit rounded-full border border-[#B0B0B0] px-2 md:px-3 lg:px-4 py-1.5 text-[8px] md:text-sm font-normal leading-[120%] text-[#B0B0B0]">
         {subscriptionStatus}
       </span>
     </div>

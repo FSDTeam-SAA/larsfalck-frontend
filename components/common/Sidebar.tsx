@@ -147,7 +147,7 @@ export function Sidebar() {
         </SheetTrigger>
         <SheetContent
           side="left"
-          className="w-64 border-r border-white/5 bg-[#161616] p-0"
+          className="w-64 border-r border-white/5 bg-[#161616] p-0 pt-10"
         >
           <SidebarContent onNavigate={() => setIsSheetOpen(false)} />
         </SheetContent>
