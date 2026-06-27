@@ -30,6 +30,8 @@ const navItems = [
   { label: "Artists", href: "/artists", icon: Mic2 },
 ];
 
+const MOBILE_SEARCH_EVENT = "mobile-search-open-change";
+
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
@@ -126,6 +128,19 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
 export function Sidebar() {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    function handleMobileSearchChange(event: Event) {
+      setIsMobileSearchOpen(Boolean((event as CustomEvent<boolean>).detail));
+    }
+
+    window.addEventListener(MOBILE_SEARCH_EVENT, handleMobileSearchChange);
+
+    return () => {
+      window.removeEventListener(MOBILE_SEARCH_EVENT, handleMobileSearchChange);
+    };
+  }, []);
 
   return (
     <>
@@ -140,7 +155,10 @@ export function Sidebar() {
           <Button
             size="icon"
             variant="ghost"
-            className="fixed left-5 top-6 z-[90] h-9 w-9 rounded-full text-zinc-300 hover:bg-white/10 hover:text-white md:hidden"
+            className={cn(
+              "fixed left-5 top-6 z-[90] h-9 w-9 rounded-full text-zinc-300 hover:bg-white/10 hover:text-white md:hidden",
+              isMobileSearchOpen && "hidden",
+            )}
           >
             <Menu className="h-5 w-5" />
           </Button>

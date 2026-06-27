@@ -66,8 +66,8 @@ export function Footer() {
   const hasTrack = Boolean(currentTrack);
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/5 bg-[#161616]">
-      <div className="grid min-h-[132px] grid-rows-[auto_auto_auto] gap-2 px-3 py-2 md:h-20 md:min-h-0 md:grid-cols-[260px_minmax(0,1fr)_260px] md:grid-rows-none md:items-center md:px-6 md:py-0 lg:grid-cols-[300px_minmax(0,1fr)_300px]">
+    <div className="fixed inset-x-3 bottom-3 z-50 rounded-xl border-t border-white/5 bg-[#FFFFFF1A]">
+      <div className="grid min-h-[132px] grid-rows-[auto_auto_auto] gap-2 px-3 py-2 sm:px-8 md:h-20 md:min-h-0 md:grid-cols-[260px_minmax(0,1fr)_260px] md:grid-rows-none md:items-center md:py-0 lg:grid-cols-[300px_minmax(0,1fr)_300px] lg:px-12">
         <div className="flex min-w-0 items-center gap-2 justify-self-stretch md:gap-3">
           <div className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white/5 sm:size-12 md:size-14">
             {currentTrack ? (

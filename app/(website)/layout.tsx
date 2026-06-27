@@ -5,7 +5,7 @@ import { Sidebar } from "@/components/common/Sidebar";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-dvh flex-col overflow-hidden px-3 pb-[132px] md:pb-20">
+    <div className="flex h-dvh flex-col overflow-hidden px-3 pb-[144px] md:pb-[92px]">
       <Navbar />
       <div className="my-3 flex min-h-0 flex-1 gap-3">
         <Sidebar />
