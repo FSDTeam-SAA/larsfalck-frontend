@@ -12,7 +12,7 @@ import {
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import LogoutModal from "@/components/modals/LogoutModal";
 import { usePlayer } from "@/components/providers/PlayerProvider";
@@ -41,6 +41,8 @@ type UserProfileResponse = {
   data: UserProfile;
 };
 
+const MOBILE_SEARCH_EVENT = "mobile-search-open-change";
+
 async function getUserProfile(token: string): Promise<UserProfileResponse> {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/me`,
@@ -65,6 +67,7 @@ export function Navbar() {
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const mobileSearchInputRef = React.useRef<HTMLInputElement>(null);
+  const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { resetPlayer } = usePlayer();
@@ -81,6 +84,20 @@ export function Navbar() {
 
   React.useEffect(() => {
     if (isMobileSearchOpen) mobileSearchInputRef.current?.focus();
+  }, [isMobileSearchOpen]);
+
+  React.useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent(MOBILE_SEARCH_EVENT, { detail: isMobileSearchOpen }),
+    );
+
+    return () => {
+      if (isMobileSearchOpen) {
+        window.dispatchEvent(
+          new CustomEvent(MOBILE_SEARCH_EVENT, { detail: false }),
+        );
+      }
+    };
   }, [isMobileSearchOpen]);
 
   function runSearch() {
@@ -120,6 +137,7 @@ export function Navbar() {
   const displayName = profile?.name || session?.user.name || "User";
   const avatarFallback =
     (displayName || "User").trim().charAt(0).toUpperCase() || "U";
+  const isHomePage = pathname === "/";
 
   return (
     <>
@@ -138,8 +156,8 @@ export function Navbar() {
             <Image
               src="/logo.png"
               alt="Logo"
-              width={157}
-              height={56}
+              width={1000}
+              height={1000}
               className="h-full w-full object-cover"
             />
           </div>
@@ -159,7 +177,12 @@ export function Navbar() {
           <Button
             size="icon"
             asChild
-            className="size-11 shrink-0 rounded-full bg-white text-black hover:bg-white/90"
+            className={cn(
+              "size-11 shrink-0 rounded-full",
+              isHomePage
+                ? "bg-white text-black hover:bg-white/90"
+                : "bg-transparent text-white hover:bg-white/10 hover:text-white",
+            )}
           >
             <Link href="/" aria-label="Home">
               <Home className="size-5" />
@@ -201,7 +224,7 @@ export function Navbar() {
                 onKeyDown={(event) => {
                   if (event.key === "Escape") setIsMobileSearchOpen(false);
                 }}
-                className="h-11 w-full rounded-full border border-white/10 bg-[#000000] z-50 pl-9 pr-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-[#00EF01] focus:ring-2 focus:ring-[#00EF01]/25"
+                className="h-11 w-full rounded-full border border-white/10 bg-[#333333]  pl-9 pr-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-[#00EF01] focus:ring-2 focus:ring-[#00EF01]/25"
               />
             </div>
 

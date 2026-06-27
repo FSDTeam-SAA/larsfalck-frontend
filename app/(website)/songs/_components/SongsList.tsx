@@ -4,10 +4,15 @@ import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 
 import { PopularSongs } from "@/components/web-components/popular-songs";
+import { Recommended } from "@/components/web-components/Recommended";
 
 import { getHomeSections } from "../../_components/HomeSections";
 
-export default function SongsList() {
+type SongsListProps = {
+  section?: "popular" | "recommended";
+};
+
+export default function SongsList({ section = "popular" }: SongsListProps) {
   const { data: session, status } = useSession();
   const token = (session?.user as { accessToken?: string } | undefined)
     ?.accessToken;
@@ -43,6 +48,18 @@ export default function SongsList() {
         {error instanceof Error ? error.message : "Unable to load songs."}
       </p>
     );
+  }
+
+  if (section === "recommended") {
+    if (!data.recommended.length) {
+      return (
+        <p className="rounded-lg bg-white/5 px-4 py-8 text-center text-sm text-[#A8A8A8]">
+          No recommendations found.
+        </p>
+      );
+    }
+
+    return <Recommended songs={data.recommended} showAll />;
   }
 
   if (!data.popularSongs.length) {

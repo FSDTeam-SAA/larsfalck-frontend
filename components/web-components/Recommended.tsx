@@ -38,6 +38,7 @@ const fallbackSongs = [
 
 type RecommendedProps = {
   songs?: HomeSong[];
+  showAll?: boolean;
 };
 
 function getSongArtist(song: HomeSong) {
@@ -48,7 +49,7 @@ function getSongType(song: HomeSong) {
   return song.albums?.[0]?.name || song.genres?.[0]?.name || "Song";
 }
 
-export function Recommended({ songs }: RecommendedProps) {
+export function Recommended({ songs, showAll = false }: RecommendedProps) {
   const items =
     songs?.map((song) => ({
       id: song._id,
@@ -57,6 +58,7 @@ export function Recommended({ songs }: RecommendedProps) {
       type: getSongType(song),
       image: song.coverImage || song.albums?.[0]?.coverImage || "/albam.png",
     })) || fallbackSongs.map((song) => ({ ...song, id: song.title }));
+  const visibleItems = showAll ? items : items.slice(0, 5);
 
   return (
     <section className="px-3 py-5 sm:px-6 sm:py-6">
@@ -64,17 +66,19 @@ export function Recommended({ songs }: RecommendedProps) {
         <h2 className="text-xl font-semibold text-[#FFFFFF] sm:text-3xl lg:text-4xl">
           Recommended for you
         </h2>
-        <Link
-          href="/songs"
-          className="text-sm font-medium text-[#A8A8A8] hover:text-white sm:text-lg"
-        >
-          Show all
-        </Link>
+        {!showAll && (
+          <Link
+            href="/songs?section=recommended"
+            className="text-sm font-medium text-[#A8A8A8] hover:text-white sm:text-lg"
+          >
+            Show all
+          </Link>
+        )}
       </div>
 
       {items.length > 0 ? (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {items.map((song) => (
+          {visibleItems.map((song) => (
             <MusicCard
               key={song.id}
               href={`/single-song/${encodeURIComponent(song.id)}`}

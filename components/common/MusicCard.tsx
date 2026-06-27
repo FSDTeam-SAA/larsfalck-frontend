@@ -37,7 +37,7 @@ export function MusicCard({
 
   const content = (
     <>
-      <div className="relative aspect-[533/620] w-full overflow-hidden rounded-md bg-white/5">
+      <div className="relative aspect-[533/520] w-full overflow-hidden rounded-md bg-white/5">
         <Image
           src={image}
           alt={title}
