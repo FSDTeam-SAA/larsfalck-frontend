@@ -60,7 +60,7 @@ export function PopularAlbum({ albums }: PopularAlbumProps) {
         </Link>
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {items.slice(0, 5).map((album) => (
           <AlbumCard
             key={album.id}

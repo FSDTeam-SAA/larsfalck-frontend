@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Image from "next/image";
-import { Clock3, MoreHorizontal, Pause, Play, Shuffle } from "lucide-react";
+import { Clock3,  Pause, Play, Shuffle } from "lucide-react";
 
 import {
   type PlayerTrack,
@@ -130,13 +130,7 @@ export default function PopularTracks({ artist, songs }: PopularTracksProps) {
           <Shuffle className="ml-1 size-7" />
         </button>
 
-        <button
-          type="button"
-          aria-label={`More options for ${artist.name}`}
-          className="text-neutral-300 transition hover:text-white"
-        >
-          <MoreHorizontal size={28} />
-        </button>
+      
       </div>
 
       <h2 className="mb-6 text-2xl font-bold text-white">Popular</h2>
@@ -217,13 +211,7 @@ export default function PopularTracks({ artist, songs }: PopularTracksProps) {
                   {formatDuration(song.duration)}
                 </span>
 
-                <button
-                  type="button"
-                  aria-label={`More options for ${song.name}`}
-                  className="flex justify-end text-neutral-500 hover:text-white"
-                >
-                  <MoreHorizontal size={16} />
-                </button>
+             
               </div>
             );
           })}

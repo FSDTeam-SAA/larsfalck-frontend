@@ -533,15 +533,7 @@ export function PlaylistDetails({
                 <span className="text-right text-base text-[#D7D7D7] md:text-center">
                   {formatDuration(song.duration)}
                 </span>
-                <Button
-                  type="button"
-                  size="icon-xs"
-                  variant="ghost"
-                  aria-label={`More options for ${song.name}`}
-                  className="text-[#A8A8A8] hover:bg-white/5 hover:text-white"
-                >
-                  <MoreHorizontal className="size-6" />
-                </Button>
+              
               </div>
             ))
           ) : (

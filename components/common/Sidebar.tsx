@@ -30,7 +30,7 @@ const navItems = [
   { label: "Artists", href: "/artists", icon: Mic2 },
 ];
 
-function SidebarContent() {
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const token = (session?.user as { accessToken?: string } | undefined)
@@ -53,7 +53,7 @@ function SidebarContent() {
             pathname === item.href ||
             (item.href === "/playlists" && pathname.startsWith("/playlists/"));
           return (
-            <Link key={item.href} href={item.href}>
+            <Link key={item.href} href={item.href} onClick={onNavigate}>
               <Button
                 className={cn(
                   "h-12 w-full justify-start gap-3 rounded-lg bg-[#FFFFFF0D] text-base font-medium text-[#FFFFFF] hover:bg-[#FFFFFF] hover:text-[#333333] sm:text-lg xl:h-[50px] xl:text-[22px]",
@@ -100,7 +100,7 @@ function SidebarContent() {
             const active = pathname === `/playlists/${playlist._id}`;
 
             return (
-              <Link key={playlist._id} href={href}>
+              <Link key={playlist._id} href={href} onClick={onNavigate}>
                 <Button
                   variant="ghost"
                   className={cn(
@@ -125,6 +125,8 @@ function SidebarContent() {
 }
 
 export function Sidebar() {
+  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+
   return (
     <>
       {/* Desktop */}
@@ -133,12 +135,12 @@ export function Sidebar() {
       </aside>
 
       {/* Mobile trigger + drawer */}
-      <Sheet>
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetTrigger asChild>
           <Button
             size="icon"
             variant="ghost"
-            className="fixed left-5 top-6 z-50 h-9 w-9 rounded-full text-zinc-300 hover:bg-white/10 hover:text-white md:hidden"
+            className="fixed left-5 top-6 z-[90] h-9 w-9 rounded-full text-zinc-300 hover:bg-white/10 hover:text-white md:hidden"
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -147,7 +149,7 @@ export function Sidebar() {
           side="left"
           className="w-64 border-r border-white/5 bg-[#161616] p-0"
         >
-          <SidebarContent />
+          <SidebarContent onNavigate={() => setIsSheetOpen(false)} />
         </SheetContent>
       </Sheet>
     </>

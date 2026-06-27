@@ -53,10 +53,10 @@ const CurrentSubscription = () => {
     : isError
       ? "Unable to load subscription"
       : subscription
-        ? `You're on Beatbox ${subscription.planId.name}`
+        ? `You're on Beatbox ${subscription?.planId?.name}`
         : "No active subscription";
   const billingDetails = subscription
-    ? `Last billing on ${formatDate(subscription.startDate)} - ${formatPrice(subscription.planId.price)}`
+    ? `Last billing on ${formatDate(subscription?.startDate)} - ${formatPrice(subscription?.planId?.price)}`
     : "Choose a plan to get started";
   const subscriptionStatus = isLoading
     ? "Loading"

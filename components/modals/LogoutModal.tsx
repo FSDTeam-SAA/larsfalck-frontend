@@ -44,7 +44,7 @@ const LogoutModal = ({
           </div>
           <div className="col-span-1">
             <button
-              className="w-full h-[44px] flex items-center justify-center gap-2 text-white bg-primary hover:bg-[#FF0000]/80 border border-primary hover:border-[#FF0000] py-[10px] px-6 text-base font-medium leading-[120%] rounded-[8px]"
+              className="w-full h-[44px] flex items-center justify-center gap-2 text-white bg-[#FF0000] hover:bg-[#FF0000]/80  hover:border-[#FF0000] py-[10px] px-6 text-base font-medium leading-[120%] rounded-[8px]"
               onClick={onConfirm}
               disabled={isLoading}
               type="button"

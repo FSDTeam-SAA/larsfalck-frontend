@@ -67,14 +67,7 @@ export function Footer() {
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/5 bg-[#161616]">
-      <div className="h-0.5 w-full bg-zinc-700 sm:hidden">
-        <div
-          className="h-full bg-[#1ed760] transition-[width]"
-          style={{ width: `${progressPercentage}%` }}
-        />
-      </div>
-
-      <div className="grid h-[72px] grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 px-3 sm:gap-4 sm:px-4 md:h-20 md:grid-cols-[260px_minmax(0,1fr)_260px] md:px-6 lg:grid-cols-[300px_minmax(0,1fr)_300px]">
+      <div className="grid min-h-[132px] grid-rows-[auto_auto_auto] gap-2 px-3 py-2 md:h-20 md:min-h-0 md:grid-cols-[260px_minmax(0,1fr)_260px] md:grid-rows-none md:items-center md:px-6 md:py-0 lg:grid-cols-[300px_minmax(0,1fr)_300px]">
         <div className="flex min-w-0 items-center gap-2 justify-self-stretch md:gap-3">
           <div className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white/5 sm:size-12 md:size-14">
             {currentTrack ? (
@@ -120,6 +113,92 @@ export function Footer() {
               )}
             </button>
           )}
+        </div>
+
+        <div className="flex w-full items-center gap-2 md:hidden">
+          <span className="w-9 text-right text-[10px] text-zinc-400">
+            {formatTime(safeCurrentTime)}
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={safeDuration || 0}
+            step={0.1}
+            value={safeCurrentTime}
+            onChange={(event) => seek(Number(event.target.value))}
+            disabled={!hasTrack || safeDuration === 0}
+            className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-zinc-700 accent-[#1ed760] disabled:cursor-not-allowed"
+            style={{
+              background: `linear-gradient(to right, #1ed760 ${progressPercentage}%, #3f3f46 ${progressPercentage}%)`,
+            }}
+            aria-label="Seek through track"
+          />
+          <span className="w-9 text-[10px] text-zinc-400">
+            {formatTime(safeDuration)}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-center gap-5 md:hidden">
+          <button
+            type="button"
+            onClick={toggleShuffle}
+            disabled={!hasTrack}
+            className={cn(
+              "text-zinc-400 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-30",
+              isShuffle && "text-[#1ed760] hover:text-[#1ed760]",
+            )}
+            aria-label={isShuffle ? "Disable shuffle" : "Enable shuffle"}
+            aria-pressed={isShuffle}
+          >
+            <Shuffle className="size-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={playPrevious}
+            disabled={!hasTrack}
+            className="text-zinc-300 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Previous track"
+          >
+            <SkipBack className="size-5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={togglePlay}
+            disabled={!hasTrack}
+            className="flex size-10 items-center justify-center rounded-full bg-white text-black disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label={isPlaying ? "Pause" : "Play"}
+          >
+            {isPlaying ? (
+              <Pause className="size-4 fill-current" />
+            ) : (
+              <Play className="size-4 fill-current" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={playNext}
+            disabled={!hasTrack}
+            className="text-zinc-300 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Next track"
+          >
+            <SkipForward className="size-5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={cycleRepeat}
+            disabled={!hasTrack}
+            className={cn(
+              "text-zinc-400 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-30",
+              repeatMode !== "off" && "text-[#1ed760] hover:text-[#1ed760]",
+            )}
+            aria-label={`Repeat ${repeatMode}`}
+          >
+            <RepeatIcon className="size-4" />
+          </button>
         </div>
 
         <div className="hidden w-full max-w-xl flex-col items-center gap-2 justify-self-center md:flex">
@@ -210,30 +289,6 @@ export function Footer() {
             </span>
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={togglePlay}
-          disabled={!hasTrack}
-          className="flex size-10 items-center justify-center rounded-full bg-white text-black justify-self-center disabled:cursor-not-allowed disabled:opacity-30 md:hidden"
-          aria-label={isPlaying ? "Pause" : "Play"}
-        >
-          {isPlaying ? (
-            <Pause className="size-4 fill-current" />
-          ) : (
-            <Play className="size-4 fill-current" />
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={playNext}
-          disabled={!hasTrack}
-          className="justify-self-end text-zinc-300 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-30 md:hidden"
-          aria-label="Next track"
-        >
-          <SkipForward className="size-5" />
-        </button>
 
         <div className="hidden items-center justify-end gap-3 justify-self-end lg:flex">
           <button

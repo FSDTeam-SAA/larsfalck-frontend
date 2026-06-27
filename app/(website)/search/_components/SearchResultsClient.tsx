@@ -83,20 +83,23 @@ export default function SearchResultsClient() {
     .split(",")
     .map((tag) => tag.trim())
     .filter(Boolean);
-  const isTagSearch = tags.length > 0 || typeParam === "tags";
-  const enabled = Boolean(
-    (query || "").trim() || tags.length > 0 || type !== "all",
-  );
-  const activeTab = tabs.find((tab) => tab.value === type);
+  const isTagSearch = tags.length > 0;
+  const enabled = isTagSearch
+    ? tags.length > 0
+    : Boolean((query || "").trim());
+  const searchKey = isTagSearch
+    ? ["search", "tags", tags.join(",")]
+    : ["search", type, query.trim()];
 
   const { data, isPending, error } = useQuery({
-    queryKey: ["search", query, type, tags.join(",")],
+    queryKey: searchKey,
     queryFn: () =>
-      searchMusic({
-        query,
-        type,
-        tags,
-      }),
+      isTagSearch
+        ? searchMusic({ tags })
+        : searchMusic({
+            query,
+            type,
+          }),
     enabled,
     staleTime: 1000 * 60 * 5,
     retry: false,
@@ -147,7 +150,7 @@ export default function SearchResultsClient() {
               return (
                 <Link
                   key={tag._id}
-                  href={buildSearchHref({ tags: [tag.name] })}
+                  href={buildSearchHref({ query, tags: [tag.name] })}
                   className={cn(
                     "rounded-full border border-white/15 px-3 py-1.5 text-xs text-[#CFCFCF] transition hover:border-white/30 hover:text-white",
                     selected &&
@@ -266,21 +269,6 @@ export default function SearchResultsClient() {
             </ResultSection>
           )}
 
-          {type === "all" && data?.matchedTags && data.matchedTags.length > 0 && (
-            <ResultSection title="Matched Tags">
-              <div className="flex flex-wrap gap-2">
-                {data.matchedTags.map((tag) => (
-                  <Link
-                    key={tag}
-                    href={buildSearchHref({ tags: [tag] })}
-                    className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-[#CFCFCF] transition hover:border-[#00EF01] hover:text-white"
-                  >
-                    {tag}
-                  </Link>
-                ))}
-              </div>
-            </ResultSection>
-          )}
         </>
       )}
     </>

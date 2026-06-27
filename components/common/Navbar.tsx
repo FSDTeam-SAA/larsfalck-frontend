@@ -3,19 +3,16 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Check,
-  ChevronDown,
   Home,
   LogOut,
   Search,
-  SlidersHorizontal,
   User,
   X,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import LogoutModal from "@/components/modals/LogoutModal";
 import { usePlayer } from "@/components/providers/PlayerProvider";
@@ -29,12 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import {
-  buildSearchHref,
-  getTags,
-  type SearchTag,
-  type SearchType,
-} from "@/lib/search";
+import { buildSearchHref } from "@/lib/search";
 import { cn } from "@/lib/utils";
 
 type UserProfile = {
@@ -67,121 +59,13 @@ async function getUserProfile(token: string): Promise<UserProfileResponse> {
   return result;
 }
 
-const searchTabs: Array<{ label: string; value: SearchType }> = [
-  { label: "All", value: "all" },
-  { label: "Songs", value: "songs" },
-  { label: "Artists", value: "artists" },
-  { label: "Playlists", value: "playlists" },
-  { label: "Albums", value: "albums" },
-];
-
-type SearchOptionsPanelProps = {
-  activeType: SearchType;
-  selectedTags: string[];
-  tags: SearchTag[];
-  isTagsLoading: boolean;
-  onTypeChange: (type: SearchType) => void;
-  onTagToggle: (tag: string) => void;
-  onSearch: () => void;
-};
-
-function SearchOptionsPanel({
-  activeType,
-  selectedTags,
-  tags,
-  isTagsLoading,
-  onTypeChange,
-  onTagToggle,
-  onSearch,
-}: SearchOptionsPanelProps) {
-  return (
-    <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-[70] rounded-xl border border-white/10 bg-[#181818] p-2 shadow-2xl">
-      <div className="flex flex-wrap items-center gap-1.5">
-        {searchTabs.map((tab) => (
-          <button
-            key={tab.value}
-            type="button"
-            onClick={() => onTypeChange(tab.value)}
-            className={cn(
-              "h-7 rounded-full border border-white/15 px-3 text-xs text-[#CFCFCF] transition hover:border-white/30 hover:text-white",
-              activeType === tab.value &&
-                "border-[#00EF01] bg-[#00EF01] text-black hover:border-[#00EF01] hover:text-black",
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className={cn(
-                "inline-flex h-7 items-center gap-1 rounded-full border border-white/15 px-3 text-xs text-[#CFCFCF] transition hover:border-white/30 hover:text-white",
-                selectedTags.length > 0 &&
-                  "border-[#00EF01] bg-[#00EF01] text-black hover:border-[#00EF01] hover:text-black",
-              )}
-            >
-              Tags{selectedTags.length > 0 ? ` (${selectedTags.length})` : ""}
-              <ChevronDown className="size-3" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            className="max-h-64 w-56 overflow-y-auto"
-          >
-            {isTagsLoading ? (
-              <DropdownMenuItem disabled>Loading tags...</DropdownMenuItem>
-            ) : tags.length > 0 ? (
-              tags.map((tag) => {
-                const selected = selectedTags.includes(tag.name);
-
-                return (
-                  <DropdownMenuItem
-                    key={tag._id}
-                    onSelect={(event) => {
-                      event.preventDefault();
-                      onTagToggle(tag.name);
-                    }}
-                  >
-                    <span className="flex size-4 items-center justify-center">
-                      {selected && <Check className="size-3" />}
-                    </span>
-                    {tag.name}
-                  </DropdownMenuItem>
-                );
-              })
-            ) : (
-              <DropdownMenuItem disabled>No tags found</DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {selectedTags.length > 0 && (
-          <button
-            type="button"
-            onClick={onSearch}
-            className="h-7 rounded-full bg-white px-3 text-xs font-medium text-black transition hover:bg-white/90"
-          >
-            Search tags
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export function Navbar() {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = React.useState(false);
-  const [isDesktopSearchOpen, setIsDesktopSearchOpen] = React.useState(false);
   const [isLogoutOpen, setIsLogoutOpen] = React.useState(false);
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [searchType, setSearchType] = React.useState<SearchType>("all");
-  const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
   const mobileSearchInputRef = React.useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const pathname = usePathname();
   const queryClient = useQueryClient();
   const { resetPlayer } = usePlayer();
   const { data: session, status } = useSession();
@@ -194,13 +78,6 @@ export function Navbar() {
     enabled: isAuthenticated,
     staleTime: 1000 * 60 * 5,
   });
-  const { data: tags = [], isPending: isTagsLoading } = useQuery({
-    queryKey: ["tags"],
-    queryFn: getTags,
-    enabled: pathname !== "/search" && isDesktopSearchOpen,
-    staleTime: 1000 * 60 * 10,
-    retry: false,
-  });
 
   React.useEffect(() => {
     if (isMobileSearchOpen) mobileSearchInputRef.current?.focus();
@@ -209,36 +86,19 @@ export function Navbar() {
   function runSearch() {
     const normalizedQuery = searchQuery || "";
 
-    if (!normalizedQuery.trim() && selectedTags.length === 0) return;
+    if (!normalizedQuery.trim()) return;
 
     router.push(
       buildSearchHref({
         query: normalizedQuery,
-        type: searchType,
-        tags: selectedTags,
       }),
     );
-    setIsDesktopSearchOpen(false);
     setIsMobileSearchOpen(false);
   }
 
   function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     runSearch();
-  }
-
-  function handleTagToggle(tag: string) {
-    setSearchType("all");
-    setSelectedTags((current) =>
-      current.includes(tag)
-        ? current.filter((item) => item !== tag)
-        : [...current, tag],
-    );
-  }
-
-  function handleTypeChange(type: SearchType) {
-    setSearchType(type);
-    setSelectedTags([]);
   }
 
   async function handleLogout() {
@@ -309,9 +169,6 @@ export function Navbar() {
           <form
             role="search"
             onSubmit={handleSearchSubmit}
-            onFocusCapture={() => {
-              if (pathname !== "/search") setIsDesktopSearchOpen(true);
-            }}
             className="relative w-full max-w-md"
           >
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
@@ -321,29 +178,8 @@ export function Navbar() {
               placeholder="Search songs, artists, albums ..."
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              className="h-11 rounded-full border-none bg-[#333333] pl-9 pr-9 text-base text-[#A8A8A8] placeholder:text-[#A8A8A8] focus-visible:ring-1 focus-visible:ring-white dark:bg-[#333333]"
+              className="h-11 rounded-full border-none bg-[#333333] pl-9 pr-4 text-base text-[#A8A8A8] placeholder:text-[#A8A8A8] focus-visible:ring-1 focus-visible:ring-white dark:bg-[#333333]"
             />
-            {pathname !== "/search" && (
-              <button
-                type="button"
-                aria-label="Search filters"
-                onClick={() => setIsDesktopSearchOpen((current) => !current)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 transition hover:text-white"
-              >
-                <SlidersHorizontal className="size-4" />
-              </button>
-            )}
-            {pathname !== "/search" && isDesktopSearchOpen && (
-              <SearchOptionsPanel
-                activeType={searchType}
-                selectedTags={selectedTags}
-                tags={tags}
-                isTagsLoading={isTagsLoading}
-                onTypeChange={handleTypeChange}
-                onTagToggle={handleTagToggle}
-                onSearch={runSearch}
-              />
-            )}
           </form>
         </div>
 
@@ -365,7 +201,7 @@ export function Navbar() {
                 onKeyDown={(event) => {
                   if (event.key === "Escape") setIsMobileSearchOpen(false);
                 }}
-                className="h-11 w-full rounded-full border border-white/10 bg-[#292929] pl-9 pr-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-[#00EF01] focus:ring-2 focus:ring-[#00EF01]/25"
+                className="h-11 w-full rounded-full border border-white/10 bg-[#333333] pl-9 pr-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-[#00EF01] focus:ring-2 focus:ring-[#00EF01]/25"
               />
             </div>
 
@@ -424,8 +260,8 @@ export function Navbar() {
                   </button>
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuItem asChild>
+                <DropdownMenuContent align="end" className="w-44 !bg-[#000000] ">
+                  <DropdownMenuItem asChild className="focus:bg-black">
                     <Link href="/profiles">
                       <User />
                       Profile

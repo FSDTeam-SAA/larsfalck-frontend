@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { MoreHorizontal, Pause, Play } from "lucide-react";
+import { Pause, Play } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 
@@ -383,7 +383,7 @@ function RecommendedSongRow({
         aria-label={`More options for ${song.name}`}
         className="relative z-20 text-[#A8A8A8] hover:bg-white/5 hover:text-white"
       >
-        <MoreHorizontal className="size-4" />
+        {/* <MoreHorizontal className="size-4" /> */}
       </Button>
     </div>
   );

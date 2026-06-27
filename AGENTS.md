@@ -23,5 +23,5 @@ Deletion over addition.
 ## SCOPE
 
 <!-- Read: every file in project.
-Write/edit/create: only inside jennifer-sandy-website/.
+Write/edit/create: only inside larsfalck-frontend/.
 Other dirs: read-only context. No modifications. -->

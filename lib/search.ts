@@ -151,6 +151,7 @@ export function buildSearchHref({
   const cleanTags = tags.filter((tag): tag is string => Boolean(tag));
 
   if (cleanTags.length > 0) {
+    if (trimmedQuery) params.set("q", trimmedQuery);
     params.set("type", "tags");
     params.set("tags", cleanTags.join(","));
   } else {

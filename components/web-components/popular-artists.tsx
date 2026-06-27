@@ -63,7 +63,7 @@ export function PopularArtists({ artists }: PopularArtistsProps) {
         </Link>
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
         {items.slice(0, 5).map((artist) => (
           <Link
             key={artist.id}

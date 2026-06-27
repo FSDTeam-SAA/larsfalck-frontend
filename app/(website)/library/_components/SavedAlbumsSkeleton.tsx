@@ -5,7 +5,7 @@ const SKELETON_CARD_COUNT = 6;
 export default function SavedAlbumsSkeleton() {
   return (
     <div
-      className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 xl:grid-cols-6"
+      className="grid grid-cols-[repeat(auto-fit,minmax(132px,1fr))] gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 xl:grid-cols-6"
       aria-label="Loading saved albums"
       aria-busy="true"
     >

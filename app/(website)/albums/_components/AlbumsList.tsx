@@ -79,7 +79,7 @@ export default function AlbumsList() {
   }
 
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <div className="grid grid-cols-3 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       {albums.map((album) => {
         const artists = album.artists.map((artist) => artist.name).join(", ");
         const releaseYear = new Date(album.releaseDate).getFullYear();

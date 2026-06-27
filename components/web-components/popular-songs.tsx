@@ -33,38 +33,7 @@ export type HomeSong = {
   duration?: number;
 };
 
-const fallbackSongs = [
-  {
-    title: "Morning Serenity",
-    artist: "Emma Rhodes",
-    type: "Piano Collection",
-    image: "/albam.png",
-  },
-  {
-    title: "Ocean Breeze",
-    artist: "Daniel Hart",
-    type: "Nature Sounds Collection",
-    image: "/albam2.png",
-  },
-  {
-    title: "Zen Journey",
-    artist: "Daniel Hart",
-    type: "Meditation Essentials",
-    image: "/albam.png",
-  },
-  {
-    title: "Sunset Dreams",
-    artist: "Sophia Lane",
-    type: "Evening Lounge",
-    image: "/albam2.png",
-  },
-  {
-    title: "Midnight Calm",
-    artist: "Michael Stone",
-    type: "Night Ambience",
-    image: "/albam.png",
-  },
-];
+
 
 type PopularSongsProps = {
   songs?: HomeSong[];
@@ -101,13 +70,7 @@ export function PopularSongs({ songs, showAll = false }: PopularSongsProps) {
         image: song.coverImage || song.albums?.[0]?.coverImage || "/albam.png",
         audioUrl: song.audioFile || "",
         duration: song.duration || 0,
-      })) ||
-      fallbackSongs.map((song) => ({
-        ...song,
-        id: song.title,
-        audioUrl: "",
-        duration: 0,
-      })),
+      })) || [],
     [songs],
   );
   const visibleItems = showAll ? items : items.slice(0, 5);
@@ -149,7 +112,7 @@ export function PopularSongs({ songs, showAll = false }: PopularSongsProps) {
         )}
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5">
         {visibleItems.map((song) => {
           const isCurrentTrack = currentTrack?.id === song.id;
           const canPlay = Boolean(song.audioUrl);

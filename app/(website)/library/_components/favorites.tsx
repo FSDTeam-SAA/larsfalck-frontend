@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { MoreHorizontal } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -62,19 +61,19 @@ export function Favorites() {
   }
 
   return (
-    <div className="w-full">
+    <div className="grid w-full gap-2 lg:block">
       {songs.map((song, index) => (
         <div
           key={song._id}
-          className="grid grid-cols-[40px_52px_minmax(220px,1fr)_minmax(180px,280px)_40px_60px_30px] items-center gap-4 px-3 py-3 transition-colors hover:bg-white/5"
+          className="grid grid-cols-[28px_48px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-3 shadow-sm shadow-black/10 transition-colors hover:bg-white/[0.06] lg:grid-cols-[40px_52px_minmax(220px,1fr)_minmax(180px,280px)_40px_60px_30px] lg:gap-4 lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none lg:hover:bg-white/5"
         >
-          <span className="text-sm text-white/80">
+          <span className="row-span-2 text-sm text-white/80 lg:row-auto">
             {String(index + 1).padStart(2, "0")}
           </span>
 
           <Link
             href={`/single-song/${song._id}`}
-            className="relative h-12 w-12 overflow-hidden rounded-md bg-white/5"
+            className="relative row-span-2 size-12 overflow-hidden rounded-md bg-white/5 lg:row-auto"
           >
             <Image
               src={song.coverImage || "/albam.png"}
@@ -88,16 +87,16 @@ export function Favorites() {
           <div className="min-w-0">
             <Link
               href={`/single-song/${song._id}`}
-              className="block truncate text-[18px] font-medium text-white hover:underline"
+              className="block truncate text-base font-medium text-white hover:underline sm:text-[18px]"
             >
               {song.name}
             </Link>
-            <p className="truncate text-[15px] text-[#8A8A8A]">
+            <p className="truncate text-sm text-[#8A8A8A] sm:text-[15px]">
               {getSongArtists(song)}
             </p>
           </div>
 
-          <p className="truncate text-[18px] text-[#A0A0A0]">
+          <p className="col-start-3 row-start-2 truncate text-xs text-[#A0A0A0] lg:col-auto lg:row-auto lg:text-[18px]">
             {getSongAlbum(song)}
           </p>
 
@@ -105,20 +104,13 @@ export function Favorites() {
             songId={song._id}
             songName={song.name}
             isFavorite
+            className="col-start-4 row-start-1 justify-self-end lg:col-auto lg:row-auto lg:justify-self-auto"
             iconClassName="text-[#00EF01]"
           />
 
-          <span className="text-l6 text-white/80">
+          <span className="col-start-4 row-start-2 justify-self-end text-xs text-white/70 lg:col-auto lg:row-auto lg:justify-self-auto lg:text-base lg:text-white/80">
             {formatDuration(song.duration)}
           </span>
-
-          <button
-            type="button"
-            aria-label={`More options for ${song.name}`}
-            className="text-white/60 hover:text-white"
-          >
-            <MoreHorizontal className="size-5" />
-          </button>
         </div>
       ))}
     </div>

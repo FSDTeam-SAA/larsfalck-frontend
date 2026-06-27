@@ -304,13 +304,7 @@ export function AlbumDetails({ details }: AlbumDetailsProps) {
                       {formatDuration(song.duration)}
                     </span>
 
-                    <button
-                      type="button"
-                      aria-label={`More options for ${song.name}`}
-                      className="inline-flex size-6 items-center justify-center rounded text-[#A8A8A8] transition hover:bg-white/5 hover:text-white"
-                    >
-                      <MoreHorizontal className="size-4" />
-                    </button>
+                  
                   </div>
                 );
               })}
