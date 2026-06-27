@@ -16,7 +16,7 @@ export default function MyPlaylistSkeleton() {
 
       <Skeleton className="mb-3 h-7 w-32 bg-white/10" />
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {Array.from({ length: SKELETON_CARD_COUNT }).map((_, index) => (
           <div key={index} className="min-w-0 rounded-lg p-1.5 sm:p-2">
             <Skeleton className="aspect-[533/620] w-full bg-white/10" />
