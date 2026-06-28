@@ -213,16 +213,15 @@ export default function SingleSongDetails({ songId }: SingleSongDetailsProps) {
 
   return (
     <section className="min-h-full rounded-[12px] bg-[#181818] px-4 py-4 text-white sm:px-5 sm:py-5 lg:px-6">
-      <header className="rounded-lg bg-[radial-gradient(circle_at_top_left,_rgba(92,30,0,0.48),_rgba(24,24,24,0)_42%)] pb-6 pt-2">
+      <header className="rounded-lg bg-[linear-gradient(0deg,_rgba(255,255,255,0.1)_0%,_rgba(255,77,0,0.1)_100%)] pb-6 pt-2">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-          <div className="relative size-28 shrink-0 overflow-hidden rounded shadow-xl">
+          <div className="relative md:w-[200px]  md:h-[200px] shrink-0 overflow-hidden rounded shadow-xl">
             <Image
               src={songImage}
               alt={`${song.name} cover`}
-              fill
-              priority
-              sizes="112px"
-              className="object-cover"
+             width={1000}
+              height={100}
+              className=" w-full h-full object-cover"
             />
           </div>
 
@@ -230,7 +229,7 @@ export default function SingleSongDetails({ songId }: SingleSongDetailsProps) {
             <p className="text-sm text-[#A8A8A8]">
               Single <span aria-hidden="true">•</span> {getSongStyle(song)}
             </p>
-            <h1 className="mt-2 truncate text-2xl font-semibold leading-tight text-white sm:text-3xl">
+            <h1 className="mt-2 truncate text-base font-semibold leading-tight text-white sm:text-3xl">
               {song.name}
             </h1>
             <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-[#C7C7C7]">

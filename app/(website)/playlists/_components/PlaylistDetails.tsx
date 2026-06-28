@@ -400,8 +400,8 @@ export function PlaylistDetails({
   }
 
   return (
-    <section className="min-h-full overflow-hidden rounded-xl bg-[#FFFFFF1A] text-white">
-      <header className="bg-[linear-gradient(0deg,_#171917_0%,_#4C4C4C_126.43%)] p-3 sm:p-5 lg:p-6">
+    <section className="min-h-full overflow-hidden rounded-xl  bg-[linear-gradient(0deg,_#171917_0%,_#4C4C4C_126.43%)] text-white">
+      <header className=" p-3 sm:p-5 lg:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
           <div className="relative aspect-square w-full max-w-[232px] shrink-0 overflow-hidden rounded shadow-xl sm:w-[232px]">
             <Image
