@@ -2,7 +2,9 @@
 
 import MusicCard from "@/components/common/MusicCard";
 import { useQuery } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
+import { Button } from "@/components/ui/button";
+import { useUserProfile } from "@/lib/use-user-profile";
+import Link from "next/link";
 
 import { CreatePlaylistModal } from "./CreatePlaylistModal";
 import MyPlaylistSkeleton from "./MyPlaylistSkeleton";
@@ -19,20 +21,28 @@ function formatSongCount(count: number) {
 }
 
 export function MyPlaylist() {
-  const { data: session, status } = useSession();
-  const token = (session?.user as { accessToken?: string } | undefined)
-    ?.accessToken;
-  const isAuthenticated = status === "authenticated" && Boolean(token);
+  const {
+    status,
+    token,
+    isAuthenticated,
+    trialExpired,
+    isProfileLoading,
+  } = useUserProfile();
+  const canUsePlaylists = isAuthenticated && !trialExpired;
 
   const { data: playlists = [], isPending, error } = useQuery({
     queryKey: ["my-playlists", token],
     queryFn: () => getMyPlaylists(token as string),
-    enabled: isAuthenticated,
+    enabled: canUsePlaylists,
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
 
-  if (status === "loading" || (isAuthenticated && isPending)) {
+  if (
+    status === "loading" ||
+    isProfileLoading ||
+    (canUsePlaylists && isPending)
+  ) {
     return <MyPlaylistSkeleton />;
   }
 
@@ -51,6 +61,16 @@ export function MyPlaylist() {
         <p className="rounded-lg bg-white/5 px-4 py-8 text-center text-sm text-[#A8A8A8]">
           Please sign in to view your playlists.
         </p>
+      ) : trialExpired ? (
+        <div className="rounded-lg bg-white/5 px-4 py-8 text-center text-sm text-[#A8A8A8]">
+          <p>Your free trial has ended. Buy a premium plan to use playlists.</p>
+          <Button
+            asChild
+            className="mt-4 rounded-full bg-[#00EF01] text-black hover:bg-[#00D801]"
+          >
+            <Link href="/subscription">Explore Premium</Link>
+          </Button>
+        </div>
       ) : error ? (
         <p className="rounded-lg bg-red-500/10 px-4 py-8 text-center text-sm text-red-300">
           {error instanceof Error

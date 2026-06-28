@@ -62,7 +62,7 @@ type ChangePasswordResponse = {
 };
 
 const inputClassName =
-  "h-12 w-full rounded-[8px] border-0 bg-[#333333] px-3 pr-9 text-sm font-normal leading-[120%] text-white shadow-none placeholder:text-[#A0A0A0] focus-visible:ring-1 focus-visible:ring-primary";
+  "h-12 w-full rounded-[8px] border-0 !bg-[#333333] px-3 pr-9 text-sm font-normal leading-[120%] text-white shadow-none placeholder:text-[#A0A0A0] focus-visible:ring-1 focus-visible:ring-primary";
 
 const labelClassName = "text-sm md:text-base font-semibold leading-[150%] text-white";
 
@@ -295,7 +295,7 @@ export default function ChangePasswordForm() {
               variant="outline"
               onClick={handleDiscardChanges}
               disabled={isPending || !form.formState.isDirty}
-              className="h-9 rounded-full border-0 bg-[#E6FDE629] px-4 text-white text-xs md:text-sm font-medium leading-[120%] hover:bg-[#3A3A3A] hover:text-white"
+              className="h-9 rounded-full border-0 !bg-[#E6FDE629] px-4 text-white text-xs md:text-sm font-medium leading-[120%] hover:bg-[#3A3A3A] hover:text-white"
             >
               Discard Changes
             </Button>

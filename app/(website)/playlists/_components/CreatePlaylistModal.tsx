@@ -3,7 +3,6 @@
 import { type FormEvent, useState } from "react";
 import { CirclePlus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -18,16 +17,21 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useUserProfile } from "@/lib/use-user-profile";
 
 import { createPlaylist } from "./playlist-api";
 
 export function CreatePlaylistModal() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: session, status } = useSession();
-  const token = (session?.user as { accessToken?: string } | undefined)
-    ?.accessToken;
-  const isAuthenticated = status === "authenticated" && Boolean(token);
+  const {
+    status,
+    token,
+    isAuthenticated,
+    trialExpired,
+    isProfileLoading,
+  } = useUserProfile();
+  const canCreatePlaylist = isAuthenticated && !trialExpired;
   const [open, setOpen] = useState(false);
   const [playlistName, setPlaylistName] = useState("");
   const [formError, setFormError] = useState("");
@@ -86,6 +90,12 @@ export function CreatePlaylistModal() {
       setFormError("Please sign in to create a playlist.");
       return;
     }
+    if (trialExpired) {
+      setFormError(
+        "Your free trial has ended. Please buy a premium plan to create playlists.",
+      );
+      return;
+    }
 
     setFormError("");
     createPlaylistMutation.mutate();
@@ -95,7 +105,7 @@ export function CreatePlaylistModal() {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
-          disabled={status === "unauthenticated"}
+          disabled={status === "unauthenticated" || isProfileLoading}
           className="h-10 gap-2 rounded-full px-3 text-sm text-black sm:h-12 sm:px-4 sm:text-base"
         >
           <CirclePlus className="size-4 sm:size-5" />
@@ -142,6 +152,13 @@ export function CreatePlaylistModal() {
               </p>
             )}
 
+            {trialExpired && (
+              <p className="rounded-md bg-white/5 px-3 py-2 text-sm text-[#A8A8A8]">
+                Your free trial has ended. Buy a premium plan to create
+                playlists.
+              </p>
+            )}
+
             <Label
               htmlFor="playlist-name"
               className="text-xs font-medium text-white sm:text-xl"
@@ -171,7 +188,7 @@ export function CreatePlaylistModal() {
             <Button
               type="submit"
               disabled={
-                !isAuthenticated ||
+                !canCreatePlaylist ||
                 createPlaylistMutation.isPending ||
                 !playlistName.trim()
               }

@@ -14,12 +14,12 @@ import {
   Music2,
   Plus,
 } from "lucide-react";
-import { useSession } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUserProfile } from "@/lib/use-user-profile";
 import { cn } from "@/lib/utils";
 import { getMyPlaylists } from "@/app/(website)/playlists/_components/playlist-api";
 
@@ -34,18 +34,26 @@ const MOBILE_SEARCH_EVENT = "mobile-search-open-change";
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
-  const token = (session?.user as { accessToken?: string } | undefined)
-    ?.accessToken;
-  const isAuthenticated = status === "authenticated" && Boolean(token);
+  const {
+    status,
+    token,
+    isAuthenticated,
+    trialExpired,
+    isProfileLoading,
+  } = useUserProfile();
+  const canUsePlaylists = isAuthenticated && !trialExpired;
 
   const { data: playlists = [], isPending } = useQuery({
     queryKey: ["my-playlists", token],
     queryFn: () => getMyPlaylists(token as string),
-    enabled: isAuthenticated,
+    enabled: canUsePlaylists,
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
+  const isPlaylistLoading =
+    status === "loading" ||
+    isProfileLoading ||
+    (canUsePlaylists && isPending);
 
   return (
     <ScrollArea className="h-full">
@@ -83,7 +91,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <div className="flex flex-col gap-3 px-2 pb-3">
-        {status === "loading" || (isAuthenticated && isPending) ? (
+        {isPlaylistLoading ? (
           Array.from({ length: 2 }).map((_, index) => (
             <div key={index} className="flex items-center gap-3 px-2">
               <Skeleton className="size-7 rounded-md bg-white/10" />
@@ -93,6 +101,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         ) : !isAuthenticated ? (
           <p className="px-2 text-sm text-zinc-500">
             Sign in to see playlists.
+          </p>
+        ) : trialExpired ? (
+          <p className="px-2 text-sm text-zinc-500">
+            Premium needed for playlists.
           </p>
         ) : playlists.length > 0 ? (
           playlists.map((playlist) => {

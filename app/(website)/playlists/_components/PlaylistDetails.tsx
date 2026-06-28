@@ -14,7 +14,6 @@ import {
   Shuffle,
   Trash2,
 } from "lucide-react";
-import { useSession } from "next-auth/react";
 import {
   keepPreviousData,
   useInfiniteQuery,
@@ -44,6 +43,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { useUserProfile } from "@/lib/use-user-profile";
 import { cn } from "@/lib/utils";
 
 import PlaylistDetailsSkeleton from "./PlaylistDetailsSkeleton";
@@ -133,21 +133,31 @@ export function PlaylistDetails({
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query.trim());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const { data: session, status } = useSession();
+  const {
+    profile,
+    status,
+    token,
+    isAuthenticated,
+    trialExpired,
+    isProfileLoading,
+  } = useUserProfile();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { currentTrack, isPlaying, isShuffle, playQueue, togglePlay } =
     usePlayer();
-  const token = (session?.user as { accessToken?: string } | undefined)
-    ?.accessToken;
-  const isAuthenticated = status === "authenticated" && Boolean(token);
+  const canUseAccount = isAuthenticated && !trialExpired;
+  const requestToken = canUseAccount ? token : undefined;
   const playlistsQueryKey = ["my-playlists", token] as const;
-  const playlistQueryKey = ["playlist", playlistId, token || "public"] as const;
+  const playlistQueryKey = [
+    "playlist",
+    playlistId,
+    requestToken || "public",
+  ] as const;
 
   const { data: playlists = [] } = useQuery({
     queryKey: playlistsQueryKey,
     queryFn: () => getMyPlaylists(token as string),
-    enabled: isAuthenticated,
+    enabled: canUseAccount,
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
@@ -158,8 +168,8 @@ export function PlaylistDetails({
     error: playlistError,
   } = useQuery({
     queryKey: playlistQueryKey,
-    queryFn: () => getPlaylistDetails(playlistId, token),
-    enabled: status !== "loading",
+    queryFn: () => getPlaylistDetails(playlistId, requestToken),
+    enabled: status !== "loading" && !isProfileLoading,
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
@@ -172,9 +182,9 @@ export function PlaylistDetails({
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ["songs", token || "public", deferredQuery],
+    queryKey: ["songs", requestToken || "public", deferredQuery],
     queryFn: ({ pageParam }) =>
-      getSongsPage(token, {
+      getSongsPage(requestToken, {
         page: pageParam,
         limit: SONGS_PAGE_LIMIT,
         search: deferredQuery || undefined,
@@ -184,7 +194,7 @@ export function PlaylistDetails({
       lastPage.paginationInfo?.hasNextPage
         ? lastPage.paginationInfo.currentPage + 1
         : undefined,
-    enabled: status !== "loading",
+    enabled: status !== "loading" && !isProfileLoading,
     staleTime: 1000 * 60 * 5,
     placeholderData: keepPreviousData,
     retry: false,
@@ -213,21 +223,24 @@ export function PlaylistDetails({
     [playlistSongsData],
   );
   const canEditPlaylist =
-    isAuthenticated && getOwnerId(playlist?.owner) === session?.user?.id;
+    canUseAccount && getOwnerId(playlist?.owner) === profile?._id;
 
   const {
     data: playlistLookupSongs = [],
     isPending: isPlaylistLookupPending,
     error: playlistLookupError,
   } = useQuery({
-    queryKey: ["songs", "playlist-lookup", token || "public"],
+    queryKey: ["songs", "playlist-lookup", requestToken || "public"],
     queryFn: async () => {
-      const result = await getSongsPage(token, { limit: 1000 });
+      const result = await getSongsPage(requestToken, { limit: 1000 });
 
       return result.songs;
     },
     enabled:
-      status !== "loading" && !hasEmbeddedSongs && playlistSongIds.length > 0,
+      status !== "loading" &&
+      !isProfileLoading &&
+      !hasEmbeddedSongs &&
+      playlistSongIds.length > 0,
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
@@ -283,10 +296,20 @@ export function PlaylistDetails({
   }`;
 
   const songMutation = useMutation({
-    mutationFn: ({ songId, action }: SongMutationVariables) =>
-      action === "add"
-        ? addSongsToPlaylist(token as string, playlistId, [songId])
-        : removeSongsFromPlaylist(token as string, playlistId, [songId]),
+    mutationFn: ({ songId, action }: SongMutationVariables) => {
+      if (!token) {
+        throw new Error("Please sign in to update this playlist.");
+      }
+      if (trialExpired) {
+        throw new Error(
+          "Your free trial has ended. Please buy a premium plan.",
+        );
+      }
+
+      return action === "add"
+        ? addSongsToPlaylist(token, playlistId, [songId])
+        : removeSongsFromPlaylist(token, playlistId, [songId]);
+    },
     onMutate: async ({ songId, action }) => {
       await queryClient.cancelQueries({ queryKey: playlistsQueryKey });
 
@@ -322,6 +345,11 @@ export function PlaylistDetails({
       if (!token) {
         throw new Error("Please sign in to delete this playlist.");
       }
+      if (trialExpired) {
+        throw new Error(
+          "Your free trial has ended. Please buy a premium plan.",
+        );
+      }
 
       return deletePlaylist(token, playlistId);
     },
@@ -353,7 +381,7 @@ export function PlaylistDetails({
   }
 
   function handleSongAction(songId: string, isAdded: boolean) {
-    if (!isAuthenticated || songMutation.isPending) return;
+    if (!canUseAccount || songMutation.isPending) return;
 
     songMutation.mutate({
       songId,
@@ -363,6 +391,7 @@ export function PlaylistDetails({
 
   if (
     status === "loading" ||
+    isProfileLoading ||
     isPlaylistPending ||
     (isPlaylistLookupPending && !hasEmbeddedSongs && playlistSongIds.length > 0)
   ) {
@@ -372,18 +401,24 @@ export function PlaylistDetails({
   if (playlistError || (playlistLookupError && !hasEmbeddedSongs)) {
     const error = playlistError || playlistLookupError;
 
-    if (!isAuthenticated) {
+    if (!canUseAccount) {
       return (
         <section className="rounded-xl bg-[#FFFFFF1A] px-4 py-16 text-center text-white">
-          <h1 className="text-xl font-semibold">Please sign in</h1>
+          <h1 className="text-xl font-semibold">
+            {trialExpired ? "Free trial ended" : "Please sign in"}
+          </h1>
           <p className="mt-2 text-sm text-[#A8A8A8]">
-            Sign in to view this playlist and play songs.
+            {trialExpired
+              ? "Buy a premium plan to use playlist features."
+              : "Sign in to view this playlist and play songs."}
           </p>
           <Button
             asChild
             className="mt-5 bg-[#00EF01] px-5 text-black hover:bg-[#00D801]"
           >
-            <Link href="/login">Sign in</Link>
+            <Link href={trialExpired ? "/subscription" : "/login"}>
+              {trialExpired ? "Explore Premium" : "Sign in"}
+            </Link>
           </Button>
         </section>
       );
@@ -421,7 +456,7 @@ export function PlaylistDetails({
             </h1>
             <p className="mt-3 text-xs text-[#A8A8A8] sm:text-base">
               <span className="font-semibold text-white">
-                {getOwnerName(playlist?.owner, session?.user?.name || owner)}
+                {getOwnerName(playlist?.owner, profile?.name || owner)}
               </span>
               <span aria-hidden="true"> · </span>
               {metadata}
@@ -472,27 +507,29 @@ export function PlaylistDetails({
             <Shuffle className="size-5" />
           </Button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                aria-label="More playlist options"
-                className="inline-flex size-8 items-center justify-center rounded-lg text-[#A8A8A8] transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00EF01] focus-visible:ring-offset-2 focus-visible:ring-offset-[#181818]"
-              >
-                <MoreHorizontal className="size-5" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-44">
-              <DropdownMenuItem
-                disabled={deletePlaylistMutation.isPending}
-                onSelect={() => setDeleteDialogOpen(true)}
-                className="text-red-400 focus:bg-red-500/10 focus:text-red-300"
-              >
-                <Trash2 className="size-4" />
-                Delete playlist
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {canEditPlaylist && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="More playlist options"
+                  className="inline-flex size-8 items-center justify-center rounded-lg text-[#A8A8A8] transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00EF01] focus-visible:ring-offset-2 focus-visible:ring-offset-[#181818]"
+                >
+                  <MoreHorizontal className="size-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-44">
+                <DropdownMenuItem
+                  disabled={deletePlaylistMutation.isPending}
+                  onSelect={() => setDeleteDialogOpen(true)}
+                  className="text-red-400 focus:bg-red-500/10 focus:text-red-300"
+                >
+                  <Trash2 className="size-4" />
+                  Delete playlist
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         <div className="mt-4">
