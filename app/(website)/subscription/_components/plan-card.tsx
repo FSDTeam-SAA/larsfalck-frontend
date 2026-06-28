@@ -56,7 +56,7 @@ const PlanCard = ({ plan }: { plan: SubscriptionPlanCardData }) => {
     if (!plan?.id) return;
 
     if (!token) {
-      toast.error("Please login first");
+      toast.error("Please login to buy a plan");
       return;
     }
 

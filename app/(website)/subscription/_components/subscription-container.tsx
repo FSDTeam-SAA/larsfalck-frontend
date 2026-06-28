@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Layers3, LoaderCircle } from "lucide-react";
+import { useSession } from "next-auth/react";
 import BillingHistory from "./billing-history";
 import CurrentSubscription from "./current-subscription";
 import PlanCard from "./plan-card";
@@ -54,6 +55,10 @@ async function getPlans(): Promise<SubscriptionPlanCardData[]> {
 }
 
 const SubscriptionContainer = () => {
+  const { data: session, status } = useSession();
+  const token = (session?.user as { accessToken?: string } | undefined)
+    ?.accessToken;
+  const isAuthenticated = status === "authenticated" && Boolean(token);
   const { data: plans = [], isLoading, isError } = useQuery({
     queryKey: ["subscription-plans"],
     queryFn: getPlans,
@@ -66,9 +71,11 @@ const SubscriptionContainer = () => {
         Subscription
       </h1>
 
-      <div className="pt-4 md:pt-6 lg:pt-8">
-        <CurrentSubscription />
-      </div>
+      {isAuthenticated && (
+        <div className="pt-4 md:pt-6 lg:pt-8">
+          <CurrentSubscription />
+        </div>
+      )}
 
       <div className="pt-8 md:pt-10 lg:pt-12">
         <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold leading-[120%] text-white">
@@ -102,9 +109,11 @@ const SubscriptionContainer = () => {
         )}
       </div>
 
-      <div className="pt-8 md:pt-10 lg:pt-12">
-        <BillingHistory />
-      </div>
+      {isAuthenticated && (
+        <div className="pt-8 md:pt-10 lg:pt-12">
+          <BillingHistory />
+        </div>
+      )}
     </section>
   );
 };

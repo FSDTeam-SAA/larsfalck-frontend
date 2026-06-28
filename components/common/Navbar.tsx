@@ -2,13 +2,7 @@
 
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Home,
-  LogOut,
-  Search,
-  User,
-  X,
-} from "lucide-react";
+import { Home, LogOut, Search, User, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -243,10 +237,17 @@ export function Navbar() {
 
         <div
           className={cn(
-            "flex shrink-0 items-center gap-2 sm:gap-3",
+            "flex shrink-0 items-center gap-1.5 sm:gap-3",
             isMobileSearchOpen && "hidden md:flex",
           )}
         >
+          <Button
+            asChild
+            className="h-8 rounded-full bg-[#00EF01] px-2.5 text-[11px] font-medium text-black hover:bg-[#1ed760]/90 sm:h-9 sm:px-5 sm:text-base"
+          >
+            <Link href="/subscription">Explore Premium</Link>
+          </Button>
+
           {status === "loading" ? (
             <div
               className="size-9 animate-pulse rounded-full bg-white/10"
@@ -254,12 +255,6 @@ export function Navbar() {
             />
           ) : isAuthenticated ? (
             <>
-              <Link href="/subscription">
-              <Button className="h-8 rounded-full bg-[#00EF01] px-3 text-xs font-medium text-black hover:bg-[#1ed760]/90 sm:h-9 sm:px-5 sm:text-base">
-                Explore Premium
-              </Button>
-              </Link>
-
               {/* <Button
                 size="icon"
                 variant="ghost"
@@ -304,9 +299,12 @@ export function Navbar() {
           ) : (
             <Button
               asChild
-              className="h-9 rounded-full bg-[#00EF01] px-5 text-sm font-semibold text-black hover:bg-[#1ed760] sm:text-base"
+              className="size-9 rounded-full bg-[#00EF01] p-0 text-sm font-semibold text-black hover:bg-[#1ed760] sm:h-9 sm:w-auto sm:px-5 sm:text-base"
             >
-              <Link href="/login">Sign In</Link>
+              <Link href="/login" aria-label="Sign in">
+                <User className="size-4 sm:hidden" />
+                <span className="hidden sm:inline">Sign In</span>
+              </Link>
             </Button>
           )}
 
