@@ -196,7 +196,7 @@ const SignupForm = () => {
         <div className="flex w-full items-center justify-center pb-5">
           <Link href="/">
             <Image
-              src="/auth_logo.png"
+              src="/logo.png"
               alt="auth logo"
               width={500}
               height={500}
@@ -228,7 +228,7 @@ const SignupForm = () => {
 
                   <FormControl>
                     <Input
-                      className="h-[48px] bg-[#333333] !rounded-[8px] text-base font-medium text-white py-3 px-4 border-none placeholder:text-[#787878]"
+                      className="h-[48px] !bg-[#333333] !rounded-[8px] text-base font-medium text-white py-3 px-4 border-none placeholder:text-[#787878]"
                       placeholder="Enter your full name"
                       {...field}
                     />
@@ -250,7 +250,7 @@ const SignupForm = () => {
 
                   <FormControl>
                     <Input
-                      className="h-[48px] bg-[#333333] !rounded-[8px] text-base font-medium text-white py-3 px-4 border-none placeholder:text-[#787878]"
+                      className="h-[48px] !bg-[#333333] !rounded-[8px] text-base font-medium text-white py-3 px-4 border-none placeholder:text-[#787878]"
                       type="email"
                       placeholder="Enter your email"
                       {...field}
@@ -285,7 +285,7 @@ const SignupForm = () => {
                       <div className="relative" ref={genreDropdownRef}>
                         <button
                           type="button"
-                          className="flex h-[48px] w-full items-center justify-between rounded-[8px] bg-[#333333] px-4 py-3 text-left text-base font-medium text-white"
+                          className="flex h-[48px] w-full items-center justify-between rounded-[8px] !bg-[#333333] px-4 py-3 text-left text-base font-medium text-white"
                           onClick={() =>
                             setIsGenreDropdownOpen((prev) => !prev)
                           }
@@ -391,7 +391,7 @@ const SignupForm = () => {
                   <FormControl>
                     <div className="relative">
                       <Input
-                        className="h-[48px] bg-[#333333] !rounded-[8px] text-base font-medium text-white py-3 px-4 border-none placeholder:text-[#787878]"
+                        className="h-[48px] !bg-[#333333] !rounded-[8px] text-base font-medium text-white py-3 px-4 border-none placeholder:text-[#787878]"
                         type={showPassword ? "text" : "password"}
                         placeholder="Create a strong password"
                         {...field}
@@ -428,7 +428,7 @@ const SignupForm = () => {
                   <FormControl>
                     <div className="relative">
                       <Input
-                        className="h-[48px] bg-[#333333] !rounded-[8px] text-base font-medium text-white py-3 px-4 border-none placeholder:text-[#787878]"
+                        className="h-[48px] !bg-[#333333] !rounded-[8px] text-base font-medium text-white py-3 px-4 border-none placeholder:text-[#787878]"
                         type={confirmShowPassword ? "text" : "password"}
                         placeholder="Repeat your password"
                         {...field}
