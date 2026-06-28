@@ -1,10 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 
 import { PopularSongs } from "@/components/web-components/popular-songs";
 import { Recommended } from "@/components/web-components/Recommended";
+import { useUserProfile } from "@/lib/use-user-profile";
 
 import { getHomeSections } from "../../_components/HomeSections";
 
@@ -13,19 +13,23 @@ type SongsListProps = {
 };
 
 export default function SongsList({ section = "popular" }: SongsListProps) {
-  const { data: session, status } = useSession();
-  const token = (session?.user as { accessToken?: string } | undefined)
-    ?.accessToken;
+  const {
+    status,
+    token,
+    trialExpired,
+    isProfileLoading,
+  } = useUserProfile();
+  const requestToken = trialExpired ? undefined : token;
 
   const { data, isPending, error } = useQuery({
-    queryKey: ["home-sections", token || "public"],
-    queryFn: () => getHomeSections(token),
-    enabled: status !== "loading",
+    queryKey: ["home-sections", requestToken || "public"],
+    queryFn: () => getHomeSections(requestToken),
+    enabled: status !== "loading" && !isProfileLoading,
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
 
-  if (status === "loading" || isPending) {
+  if (status === "loading" || isProfileLoading || isPending) {
     return (
       <section className="px-3 py-5 sm:px-6 sm:py-6">
         <div className="mb-4 h-9 w-48 rounded bg-white/10 sm:mb-7" />

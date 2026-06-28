@@ -37,7 +37,7 @@ const formSchema = z.object({
 });
 
 const inputClassName =
-  "h-12 w-full rounded-[4px] border-0 bg-[#FFFFFF0F] px-3 text-sm md:text-base font-normal leading-[120%] text-white shadow-none placeholder:text-[#8A8A8A] focus-visible:ring-1 focus-visible:ring-primary disabled:bg-[#242424] disabled:text-white disabled:opacity-100";
+  "h-12 w-full rounded-[4px] border-0 !bg-[#FFFFFF0F] px-3 text-sm md:text-base font-normal leading-[120%] text-white shadow-none placeholder:text-[#8A8A8A] focus-visible:ring-1 focus-visible:ring-primary disabled:bg-[#242424] disabled:text-white disabled:opacity-100";
 
 const labelClassName =
   "text-sm md:text-base font-semibold leading-[150%] text-white";

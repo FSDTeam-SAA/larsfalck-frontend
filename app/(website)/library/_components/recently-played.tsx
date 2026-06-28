@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Pause, Play } from "lucide-react";
-import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -12,11 +11,13 @@ import {
   type PlayerTrack,
   usePlayer,
 } from "@/components/providers/PlayerProvider";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   getRecentlyPlayedSongs,
   recentlyPlayedQueryKey,
 } from "@/lib/recently-played";
+import { useUserProfile } from "@/lib/use-user-profile";
 
 import {
   formatDuration,
@@ -27,13 +28,19 @@ import {
 import RecentlyPlayedSkeleton from "./RecentlyPlayedSkeleton";
 
 export function RecentlyPlayed() {
-  const { data: session, status } = useSession();
+  const {
+    status,
+    token,
+    isAuthenticated,
+    trialExpired,
+    isProfileLoading,
+  } = useUserProfile();
   const { currentTrack, isPlaying, playQueue, togglePlay } = usePlayer();
-  const token = session?.user?.accessToken;
+  const canUseLibrary = isAuthenticated && !trialExpired;
   const { data: songs = [], isPending, error } = useQuery({
     queryKey: recentlyPlayedQueryKey(token),
     queryFn: () => getRecentlyPlayedSongs(token as string),
-    enabled: status === "authenticated" && Boolean(token),
+    enabled: canUseLibrary,
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
@@ -59,15 +66,36 @@ export function RecentlyPlayed() {
     playQueue(playerTracks, { startTrackId: songId });
   }
 
-  if (status === "loading" || (token && isPending)) {
+  if (
+    status === "loading" ||
+    isProfileLoading ||
+    (canUseLibrary && isPending)
+  ) {
     return <RecentlyPlayedSkeleton />;
   }
 
-  if (!token) {
+  if (!isAuthenticated) {
     return (
       <p className="rounded-lg bg-white/5 px-4 py-8 text-center text-sm text-[#A8A8A8]">
         Please sign in to view recently played songs.
       </p>
+    );
+  }
+
+  if (trialExpired) {
+    return (
+      <div className="rounded-lg bg-white/5 px-4 py-8 text-center text-sm text-[#A8A8A8]">
+        <p>
+          Your free trial has ended. Buy a premium plan to view recently played
+          songs.
+        </p>
+        <Button
+          asChild
+          className="mt-4 rounded-full bg-[#00EF01] text-black hover:bg-[#00D801]"
+        >
+          <Link href="/subscription">Explore Premium</Link>
+        </Button>
+      </div>
     );
   }
 

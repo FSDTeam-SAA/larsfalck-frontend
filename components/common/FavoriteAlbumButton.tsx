@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleMinus, CirclePlus } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
 import {
   favoriteAlbumsQueryKey,
   getFavoriteAlbums,
 } from "@/lib/favorite-albums";
+import { useUserProfile } from "@/lib/use-user-profile";
 import { cn } from "@/lib/utils";
 
 type FavoriteAlbumButtonProps = {
@@ -49,15 +49,14 @@ export function FavoriteAlbumButton({
   albumName,
   className,
 }: FavoriteAlbumButtonProps) {
-  const { data: session } = useSession();
-  const token = session?.user?.accessToken;
+  const { token, trialExpired } = useUserProfile();
   const queryClient = useQueryClient();
   const queryKey = favoriteAlbumsQueryKey(token);
   const [favoriteOverride, setFavoriteOverride] = useState<boolean>();
   const { data: favoriteAlbums = [] } = useQuery({
     queryKey,
     queryFn: () => getFavoriteAlbums(token as string),
-    enabled: Boolean(token),
+    enabled: Boolean(token) && !trialExpired,
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
@@ -68,6 +67,11 @@ export function FavoriteAlbumButton({
     mutationFn: () => {
       if (!token) {
         throw new Error("Please sign in to add favorite albums.");
+      }
+      if (trialExpired) {
+        throw new Error(
+          "Your free trial has ended. Please buy a premium plan.",
+        );
       }
 
       return updateFavoriteAlbum(token, albumId);

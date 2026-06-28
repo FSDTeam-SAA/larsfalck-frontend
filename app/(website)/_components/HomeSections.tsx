@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 
 import { FeaturedPlaylist } from "@/components/web-components/FeaturedPlaylist";
 import { PopularAlbum } from "@/components/web-components/PopularAlbum";
@@ -13,6 +12,7 @@ import {
   PopularSongs,
   type HomeSong,
 } from "@/components/web-components/popular-songs";
+import { useUserProfile } from "@/lib/use-user-profile";
 
 import HomeSectionsSkeleton from "./HomeSectionsSkeleton";
 
@@ -72,19 +72,23 @@ export async function getHomeSections(
 }
 
 export default function HomeSections() {
-  const { data: session, status } = useSession();
-  const token = (session?.user as { accessToken?: string } | undefined)
-    ?.accessToken;
+  const {
+    status,
+    token,
+    trialExpired,
+    isProfileLoading,
+  } = useUserProfile();
+  const requestToken = trialExpired ? undefined : token;
 
   const { data, isPending, error } = useQuery({
-    queryKey: ["home-sections", token || "public"],
-    queryFn: () => getHomeSections(token),
-    enabled: status !== "loading",
+    queryKey: ["home-sections", requestToken || "public"],
+    queryFn: () => getHomeSections(requestToken),
+    enabled: status !== "loading" && !isProfileLoading,
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
 
-  if (status === "loading" || isPending) {
+  if (status === "loading" || isProfileLoading || isPending) {
     return <HomeSectionsSkeleton />;
   }
 

@@ -49,7 +49,7 @@ const LogoutModal = ({
               disabled={isLoading}
               type="button"
             >
-             <LogOut className="w-5 h-5 text-white"/> {isLoading ? "Logging out..." : "Logout"}
+             <LogOut className="w-5 h-5 text-white"/> {isLoading ? "Logging out" : "Logout"}
             </button>
           </div>
         </DialogFooter>

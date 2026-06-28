@@ -1,15 +1,16 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 
 import { FavoriteSongButton } from "@/components/common/FavoriteSongButton";
+import { Button } from "@/components/ui/button";
 import {
   favoriteSongsQueryKey,
   getFavoriteSongs,
 } from "@/lib/favorite-songs";
+import { useUserProfile } from "@/lib/use-user-profile";
 
 import {
   formatDuration,
@@ -20,25 +21,49 @@ import {
 import FavoritesSkeleton from "./FavoritesSkeleton";
 
 export function Favorites() {
-  const { data: session, status } = useSession();
-  const token = session?.user?.accessToken;
+  const {
+    status,
+    token,
+    isAuthenticated,
+    trialExpired,
+    isProfileLoading,
+  } = useUserProfile();
+  const canUseLibrary = isAuthenticated && !trialExpired;
   const { data: songs = [], isPending, error } = useQuery({
     queryKey: favoriteSongsQueryKey(token),
     queryFn: () => getFavoriteSongs(token as string),
-    enabled: status === "authenticated" && Boolean(token),
+    enabled: canUseLibrary,
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
 
-  if (status === "loading" || (token && isPending)) {
+  if (
+    status === "loading" ||
+    isProfileLoading ||
+    (canUseLibrary && isPending)
+  ) {
     return <FavoritesSkeleton />;
   }
 
-  if (!token) {
+  if (!isAuthenticated) {
     return (
       <p className="rounded-lg bg-white/5 px-4 py-8 text-center text-sm text-[#A8A8A8]">
         Please sign in to view your favorite songs.
       </p>
+    );
+  }
+
+  if (trialExpired) {
+    return (
+      <div className="rounded-lg bg-white/5 px-4 py-8 text-center text-sm text-[#A8A8A8]">
+        <p>Your free trial has ended. Buy a premium plan to view favorites.</p>
+        <Button
+          asChild
+          className="mt-4 rounded-full bg-[#00EF01] text-black hover:bg-[#00D801]"
+        >
+          <Link href="/subscription">Explore Premium</Link>
+        </Button>
+      </div>
     );
   }
 

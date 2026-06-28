@@ -3,7 +3,6 @@
 import { MouseEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleMinus, CirclePlus } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
 import {
@@ -12,6 +11,7 @@ import {
   getFavoriteSongs,
   removeFavoriteSong,
 } from "@/lib/favorite-songs";
+import { useUserProfile } from "@/lib/use-user-profile";
 import { cn } from "@/lib/utils";
 
 type FavoriteSongButtonProps = {
@@ -29,14 +29,13 @@ export function FavoriteSongButton({
   className,
   iconClassName,
 }: FavoriteSongButtonProps) {
-  const { data: session } = useSession();
-  const token = session?.user?.accessToken;
+  const { token, trialExpired } = useUserProfile();
   const queryClient = useQueryClient();
   const queryKey = favoriteSongsQueryKey(token);
   const { data: favoriteSongs = [] } = useQuery({
     queryKey,
     queryFn: () => getFavoriteSongs(token as string),
-    enabled: Boolean(token) && isFavorite === undefined,
+    enabled: Boolean(token) && !trialExpired && isFavorite === undefined,
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
@@ -46,6 +45,11 @@ export function FavoriteSongButton({
     mutationFn: () => {
       if (!token) {
         throw new Error("Please sign in to add favorites.");
+      }
+      if (trialExpired) {
+        throw new Error(
+          "Your free trial has ended. Please buy a premium plan.",
+        );
       }
 
       return active

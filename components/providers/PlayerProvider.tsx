@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { toast } from "sonner";
+import { useUserProfile } from "@/lib/use-user-profile";
 
 export type RepeatMode = "off" | "all" | "one";
 
@@ -83,9 +83,13 @@ function shuffleIndexes(indexes: number[]) {
 }
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
-  const { data: session, status } = useSession();
+  const {
+    status,
+    token,
+    trialExpired,
+    isProfileLoading,
+  } = useUserProfile();
   const router = useRouter();
-  const token = session?.user?.accessToken;
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const [queue, setQueue] = React.useState<PlayerTrack[]>([]);
   const [order, setOrder] = React.useState<number[]>([]);
@@ -110,11 +114,25 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     });
   }, [router]);
 
+  const promptPremium = React.useCallback(() => {
+    toast.error("Your free trial has ended. Please buy a premium plan.", {
+      id: "trial-expired",
+      action: {
+        label: "Explore Premium",
+        onClick: () => router.push("/subscription"),
+      },
+    });
+  }, [router]);
+
   const loadAndPlay = React.useCallback(
     (track: PlayerTrack) => {
-      if (status === "loading") return;
+      if (status === "loading" || isProfileLoading) return;
       if (!token) {
         promptLogin();
+        return;
+      }
+      if (trialExpired) {
+        promptPremium();
         return;
       }
 
@@ -132,14 +150,25 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         .then(() => recordSongPlay(track.id, token))
         .catch(() => setIsPlaying(false));
     },
-    [promptLogin, status, token],
+    [
+      isProfileLoading,
+      promptLogin,
+      promptPremium,
+      status,
+      token,
+      trialExpired,
+    ],
   );
 
   const playQueue = React.useCallback(
     (tracks: PlayerTrack[], options: PlayQueueOptions = {}) => {
-      if (status === "loading") return;
+      if (status === "loading" || isProfileLoading) return;
       if (!token) {
         promptLogin();
+        return;
+      }
+      if (trialExpired) {
+        promptPremium();
         return;
       }
 
@@ -178,13 +207,25 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       setIsShuffle(Boolean(options.shuffle));
       loadAndPlay(playableTracks[trackIndexToPlay]);
     },
-    [loadAndPlay, promptLogin, status, token],
+    [
+      isProfileLoading,
+      loadAndPlay,
+      promptLogin,
+      promptPremium,
+      status,
+      token,
+      trialExpired,
+    ],
   );
 
   const togglePlay = React.useCallback(() => {
-    if (status === "loading") return;
+    if (status === "loading" || isProfileLoading) return;
     if (!token) {
       promptLogin();
+      return;
+    }
+    if (trialExpired) {
+      promptPremium();
       return;
     }
 
@@ -209,7 +250,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     } else {
       audio.pause();
     }
-  }, [currentTrack, promptLogin, status, token]);
+  }, [
+    currentTrack,
+    isProfileLoading,
+    promptLogin,
+    promptPremium,
+    status,
+    token,
+    trialExpired,
+  ]);
 
   const playNext = React.useCallback(() => {
     if (queue.length === 0 || order.length === 0) return;
@@ -359,10 +408,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, [currentTrack, playNext, repeatMode, token]);
 
   React.useEffect(() => {
-    if (status !== "unauthenticated") return;
+    if (status !== "unauthenticated" && !trialExpired) return;
 
     resetPlayer();
-  }, [resetPlayer, status]);
+  }, [resetPlayer, status, trialExpired]);
 
   React.useEffect(() => {
     const audio = audioRef.current;

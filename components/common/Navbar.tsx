@@ -1,14 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Home, LogOut, Search, User, X } from "lucide-react";
-import { signOut, useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import LogoutModal from "@/components/modals/LogoutModal";
+import TrialExpiredModal from "@/components/modals/TrialExpiredModal";
 import { usePlayer } from "@/components/providers/PlayerProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -21,43 +22,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { buildSearchHref } from "@/lib/search";
+import { useUserProfile } from "@/lib/use-user-profile";
 import { cn } from "@/lib/utils";
 
-type UserProfile = {
-  name?: string;
-  email?: string;
-  profileImage?: string | null;
-};
-
-type UserProfileResponse = {
-  success: boolean;
-  message: string;
-  data: UserProfile;
-};
-
 const MOBILE_SEARCH_EVENT = "mobile-search-open-change";
-
-async function getUserProfile(token: string): Promise<UserProfileResponse> {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/me`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
-  const result = (await response.json()) as UserProfileResponse;
-
-  if (!response.ok || !result.success || !result.data) {
-    throw new Error(result.message || "Could not load user profile");
-  }
-
-  return result;
-}
 
 export function Navbar() {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = React.useState(false);
   const [isLogoutOpen, setIsLogoutOpen] = React.useState(false);
+  const [isTrialExpiredOpen, setIsTrialExpiredOpen] = React.useState(false);
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const mobileSearchInputRef = React.useRef<HTMLInputElement>(null);
@@ -65,16 +38,13 @@ export function Navbar() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { resetPlayer } = usePlayer();
-  const { data: session, status } = useSession();
-  const token = session?.user.accessToken;
-  const isAuthenticated = status === "authenticated" && Boolean(token);
-
-  const { data: profileResponse } = useQuery({
-    queryKey: ["user-me"],
-    queryFn: () => getUserProfile(token as string),
-    enabled: isAuthenticated,
-    staleTime: 1000 * 60 * 5,
-  });
+  const {
+    session,
+    profile,
+    status,
+    isAuthenticated,
+    trialExpired,
+  } = useUserProfile();
 
   React.useEffect(() => {
     if (isMobileSearchOpen) mobileSearchInputRef.current?.focus();
@@ -93,6 +63,10 @@ export function Navbar() {
       }
     };
   }, [isMobileSearchOpen]);
+
+  React.useEffect(() => {
+    if (trialExpired) setIsTrialExpiredOpen(true);
+  }, [trialExpired]);
 
   function runSearch() {
     const normalizedQuery = searchQuery || "";
@@ -126,7 +100,6 @@ export function Navbar() {
     }
   }
 
-  const profile = profileResponse?.data;
   const avatarImage = profile?.profileImage || "/no-user.jpg";
   const displayName = profile?.name || session?.user.name || "User";
   const avatarFallback =
@@ -327,6 +300,10 @@ export function Navbar() {
         onClose={() => setIsLogoutOpen(false)}
         onConfirm={handleLogout}
         isLoading={isLoggingOut}
+      />
+      <TrialExpiredModal
+        isOpen={isTrialExpiredOpen}
+        onClose={() => setIsTrialExpiredOpen(false)}
       />
     </>
   );
