@@ -40,7 +40,7 @@ export function MyPlaylist() {
     <section className="px-3 py-5 sm:px-6 sm:py-6">
       <div className="mb-4 flex items-center justify-between sm:mb-7">
         <h2 className="text-xl font-semibold text-[#FFFFFF] sm:text-3xl lg:text-4xl">
-          Playlists
+          Playlists 
         </h2>
         <CreatePlaylistModal />
       </div>
