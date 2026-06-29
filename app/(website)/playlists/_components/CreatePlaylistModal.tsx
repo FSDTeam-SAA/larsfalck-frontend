@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, type ReactElement, useState } from "react";
 import { CirclePlus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,7 +21,11 @@ import { useUserProfile } from "@/lib/use-user-profile";
 
 import { createPlaylist } from "./playlist-api";
 
-export function CreatePlaylistModal() {
+type CreatePlaylistModalProps = {
+  trigger?: ReactElement;
+};
+
+export function CreatePlaylistModal({ trigger }: CreatePlaylistModalProps = {}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const {
@@ -71,6 +75,8 @@ export function CreatePlaylistModal() {
   }
 
   function handleOpenChange(nextOpen: boolean) {
+    if (nextOpen && !canCreatePlaylist) return;
+
     setOpen(nextOpen);
 
     if (!nextOpen) resetForm();
@@ -104,13 +110,15 @@ export function CreatePlaylistModal() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button
-          disabled={status === "unauthenticated" || isProfileLoading}
-          className="h-10 gap-2 rounded-full px-3 text-sm text-black sm:h-12 sm:px-4 sm:text-base"
-        >
-          <CirclePlus className="size-4 sm:size-5" />
-          <span className="whitespace-nowrap">Create Playlist</span>
-        </Button>
+        {trigger ?? (
+          <Button
+            disabled={!canCreatePlaylist || isProfileLoading}
+            className="h-10 gap-2 rounded-full px-3 text-sm text-black sm:h-12 sm:px-4 sm:text-base"
+          >
+            <CirclePlus className="size-4 sm:size-5" />
+            <span className="whitespace-nowrap">Create Playlist</span>
+          </Button>
+        )}
       </DialogTrigger>
 
       <DialogContent
