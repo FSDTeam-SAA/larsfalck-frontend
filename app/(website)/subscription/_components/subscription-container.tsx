@@ -1,11 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, Layers3, LoaderCircle } from "lucide-react";
+import { AlertCircle, Layers3 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import BillingHistory from "./billing-history";
 import CurrentSubscription from "./current-subscription";
 import PlanCard from "./plan-card";
+import SubscriptionContainerSkeleton from "./subscription-container-skeleton";
 import type {
   PlanItem,
   PlansApiResponse,
@@ -65,6 +66,14 @@ const SubscriptionContainer = () => {
     staleTime: 1000 * 60 * 5,
   });
 
+  if (status === "loading" || isLoading) {
+    return (
+      <SubscriptionContainerSkeleton
+        showAccountSections={status !== "unauthenticated"}
+      />
+    );
+  }
+
   return (
     <section className="min-h-full rounded-[16px] bg-[#FFFFFF1A] p-4 md:p-5 lg:p-6 text-white ">
       <h1 className="text-2xl md:text-3xl lg:text-4xl font-semibold leading-none text-white ">
@@ -81,13 +90,7 @@ const SubscriptionContainer = () => {
         <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold leading-[120%] text-white">
           Available Plans
         </h2>
-        {isLoading ? (
-          <QueryStateCard
-            title="Loading plans"
-            description="We’re pulling the latest subscription options for you."
-            icon={LoaderCircle}
-          />
-        ) : isError ? (
+        {isError ? (
           <QueryStateCard
             title="Couldn’t load plans"
             description="Please refresh the page or check back in a moment."

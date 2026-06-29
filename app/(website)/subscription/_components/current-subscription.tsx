@@ -47,22 +47,32 @@ const CurrentSubscription = () => {
     enabled: status === "authenticated" && !!token,
     staleTime: 1000 * 60 * 5,
   });
-  const subscription = data?.data?.subscription;
+  const responseData = data?.data;
+  const subscription = responseData?.subscription;
+  const isTrial = !subscription && Boolean(responseData?.trialEndsAt);
+  const trialDateLabel = responseData?.trialExpired
+    ? "Trial ended on"
+    : "Trial ends on";
+  const trialStatus = responseData?.trialExpired ? "Expired" : "Trial";
   const title = isLoading
     ? "Loading subscription..."
     : isError
       ? "Unable to load subscription"
       : subscription
         ? `You're on Beatbox ${subscription?.planId?.name}`
+        : isTrial
+          ? "You're on Beatbox Free Trial"
         : "No active subscription";
   const billingDetails = subscription
     ? `Last billing on ${formatDate(subscription?.startDate)} - ${formatPrice(subscription?.planId?.price)}`
+    : isTrial
+      ? `${trialDateLabel} ${formatDate(responseData?.trialEndsAt || undefined)}`
     : "Choose a plan to get started";
   const subscriptionStatus = isLoading
     ? "Loading"
     : subscription?.status === "active"
       ? "On Going"
-      : subscription?.status || "Inactive";
+      : subscription?.status || (isTrial ? trialStatus : "Inactive");
 
   return (
     <div className="flex justify-between items-center gap-2 md:gap-4 rounded-[12px] border border-[#006400] bg-[#1ED7600D] px-2 md:px-3 lg:px-4 py-3 md:py-4 lg:py-5">

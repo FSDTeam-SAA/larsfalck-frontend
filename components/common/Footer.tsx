@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
+import { toast } from "sonner";
 import {
   Check,
   Music2,
@@ -18,7 +20,16 @@ import {
   VolumeX,
 } from "lucide-react";
 
-import { usePlayer } from "@/components/providers/PlayerProvider";
+import {
+  type PlayerTrack,
+  usePlayer,
+} from "@/components/providers/PlayerProvider";
+import { getSongArtists } from "@/app/(website)/playlists/_components/playlist-api";
+import {
+  getRecentlyPlayedSongs,
+  recentlyPlayedQueryKey,
+} from "@/lib/recently-played";
+import { useUserProfile } from "@/lib/use-user-profile";
 import { cn } from "@/lib/utils";
 
 function formatTime(seconds: number) {
@@ -47,12 +58,63 @@ export function Footer() {
     toggleMute,
     toggleShuffle,
     cycleRepeat,
+    seedQueue,
   } = usePlayer();
+  const {
+    token,
+    isAuthenticated,
+    trialExpired,
+  } = useUserProfile();
   const [isFavorite, setIsFavorite] = React.useState(false);
+  const promptedTokenRef = React.useRef<string | null>(null);
+  const canUseRecentlyPlayed = isAuthenticated && !trialExpired;
+  const { data: recentlyPlayedSongs = [], isPending, error } = useQuery({
+    queryKey: recentlyPlayedQueryKey(token),
+    queryFn: () => getRecentlyPlayedSongs(token as string),
+    enabled: canUseRecentlyPlayed,
+    staleTime: 1000 * 60 * 5,
+    retry: false,
+  });
+  const recentlyPlayedTracks = React.useMemo<PlayerTrack[]>(
+    () =>
+      recentlyPlayedSongs.map((song) => ({
+        id: song._id,
+        title: song.name,
+        artist: getSongArtists(song),
+        image: song.coverImage || "/albam.png",
+        audioUrl: song.audioFile || "",
+        duration: song.duration || 0,
+      })),
+    [recentlyPlayedSongs],
+  );
 
   React.useEffect(() => {
     setIsFavorite(false);
   }, [currentTrack?.id]);
+
+  React.useEffect(() => {
+    if (!canUseRecentlyPlayed || isPending || error || currentTrack) return;
+
+    if (recentlyPlayedTracks.some((track) => track.audioUrl)) {
+      seedQueue(recentlyPlayedTracks);
+      return;
+    }
+
+    if (token && promptedTokenRef.current !== token) {
+      promptedTokenRef.current = token;
+      toast.info("Select a song to start listening.", {
+        id: "select-first-song",
+      });
+    }
+  }, [
+    canUseRecentlyPlayed,
+    currentTrack,
+    error,
+    isPending,
+    recentlyPlayedTracks,
+    seedQueue,
+    token,
+  ]);
 
   const safeDuration = Math.max(duration, 0);
   const safeCurrentTime =

@@ -32,6 +32,7 @@ type PlayerContextValue = {
   isMuted: boolean;
   isShuffle: boolean;
   repeatMode: RepeatMode;
+  seedQueue: (tracks: PlayerTrack[], options?: PlayQueueOptions) => void;
   playQueue: (tracks: PlayerTrack[], options?: PlayQueueOptions) => void;
   togglePlay: () => void;
   playNext: () => void;
@@ -80,6 +81,41 @@ function shuffleIndexes(indexes: number[]) {
   }
 
   return shuffled;
+}
+
+function getQueueState(tracks: PlayerTrack[], options: PlayQueueOptions = {}) {
+  const playableTracks = tracks.filter((track) => Boolean(track.audioUrl));
+  if (playableTracks.length === 0) return null;
+
+  const indexes = playableTracks.map((_, index) => index);
+  const requestedIndex = options.startTrackId
+    ? playableTracks.findIndex((track) => track.id === options.startTrackId)
+    : -1;
+  const startIndex = requestedIndex >= 0 ? requestedIndex : indexes[0];
+
+  if (!options.shuffle) {
+    return {
+      tracks: playableTracks,
+      order: indexes,
+      position: startIndex,
+      track: playableTracks[startIndex],
+    };
+  }
+
+  const order =
+    requestedIndex >= 0
+      ? [
+          startIndex,
+          ...shuffleIndexes(indexes.filter((index) => index !== startIndex)),
+        ]
+      : shuffleIndexes(indexes);
+
+  return {
+    tracks: playableTracks,
+    order,
+    position: 0,
+    track: playableTracks[order[0]],
+  };
 }
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
@@ -172,40 +208,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const playableTracks = tracks.filter((track) => Boolean(track.audioUrl));
-      if (playableTracks.length === 0) return;
+      const queueState = getQueueState(tracks, options);
+      if (!queueState) return;
 
-      const indexes = playableTracks.map((_, index) => index);
-      const requestedIndex = options.startTrackId
-        ? playableTracks.findIndex(
-            (track) => track.id === options.startTrackId,
-          )
-        : -1;
-      const startIndex = requestedIndex >= 0 ? requestedIndex : indexes[0];
-
-      let nextOrder = indexes;
-      let nextPosition = startIndex;
-      let trackIndexToPlay = startIndex;
-
-      if (options.shuffle) {
-        nextOrder =
-          requestedIndex >= 0
-            ? [
-                startIndex,
-                ...shuffleIndexes(
-                  indexes.filter((index) => index !== startIndex),
-                ),
-              ]
-            : shuffleIndexes(indexes);
-        nextPosition = 0;
-        trackIndexToPlay = nextOrder[0];
-      }
-
-      setQueue(playableTracks);
-      setOrder(nextOrder);
-      setQueuePosition(nextPosition);
+      setQueue(queueState.tracks);
+      setOrder(queueState.order);
+      setQueuePosition(queueState.position);
       setIsShuffle(Boolean(options.shuffle));
-      loadAndPlay(playableTracks[trackIndexToPlay]);
+      loadAndPlay(queueState.track);
     },
     [
       isProfileLoading,
@@ -216,6 +226,28 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       token,
       trialExpired,
     ],
+  );
+
+  const seedQueue = React.useCallback(
+    (tracks: PlayerTrack[], options: PlayQueueOptions = {}) => {
+      const queueState = getQueueState(tracks, options);
+      if (!queueState) return;
+
+      const audio = audioRef.current;
+      if (audio) {
+        audio.src = queueState.track.audioUrl;
+        audio.load();
+      }
+
+      setQueue(queueState.tracks);
+      setOrder(queueState.order);
+      setQueuePosition(queueState.position);
+      setCurrentTime(0);
+      setDuration(queueState.track.duration || 0);
+      setIsPlaying(false);
+      setIsShuffle(Boolean(options.shuffle));
+    },
+    [],
   );
 
   const togglePlay = React.useCallback(() => {
@@ -432,6 +464,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       isMuted,
       isShuffle,
       repeatMode,
+      seedQueue,
       playQueue,
       togglePlay,
       playNext,
@@ -457,6 +490,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       queue,
       repeatMode,
       resetPlayer,
+      seedQueue,
       seek,
       toggleMute,
       togglePlay,

@@ -251,7 +251,7 @@ export function Navbar() {
                   </button>
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent align="end" className="w-44 !bg-[#000000] ">
+                <DropdownMenuContent align="end" className="w-44 bg-[#000000]  ">
                   <DropdownMenuItem asChild className="focus:bg-black">
                     <Link href="/profiles">
                       <User />
