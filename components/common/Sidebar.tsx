@@ -33,7 +33,13 @@ const navItems = [
 
 const MOBILE_SEARCH_EVENT = "mobile-search-open-change";
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({
+  onNavigate,
+  onCreatePlaylist,
+}: {
+  onNavigate?: () => void;
+  onCreatePlaylist?: () => void;
+}) {
   const pathname = usePathname();
   const {
     status,
@@ -83,18 +89,15 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
           My Playlists
         </span>
-        <CreatePlaylistModal
-          trigger={
-            <button
-              type="button"
-              disabled={!canUsePlaylists || isProfileLoading}
-              aria-label="Create playlist"
-              className="flex h-5 w-5 items-center justify-center rounded text-zinc-400 hover:bg-[#2a2a2a] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </button>
-          }
-        />
+        <button
+          type="button"
+          onClick={onCreatePlaylist}
+          disabled={!canUsePlaylists || isProfileLoading}
+          aria-label="Create playlist"
+          className="flex h-5 w-5 items-center justify-center rounded text-zinc-400 hover:bg-[#2a2a2a] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
       </div>
 
       <div className="flex flex-col gap-3 px-2 pb-3">
@@ -147,7 +150,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
 export function Sidebar() {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [isCreatePlaylistOpen, setIsCreatePlaylistOpen] =
+    React.useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = React.useState(false);
+
+  function openCreatePlaylist() {
+    setIsSheetOpen(false);
+    setIsCreatePlaylistOpen(true);
+  }
 
   React.useEffect(() => {
     function handleMobileSearchChange(event: Event) {
@@ -165,7 +175,7 @@ export function Sidebar() {
     <>
       {/* Desktop */}
       <aside className="sticky top-3 hidden h-full min-h-0 shrink-0 rounded-[12px] bg-[#FFFFFF1A] md:block md:w-[260px] xl:w-[320px]">
-        <SidebarContent />
+        <SidebarContent onCreatePlaylist={openCreatePlaylist} />
       </aside>
 
       {/* Mobile trigger + drawer */}
@@ -186,9 +196,18 @@ export function Sidebar() {
           side="left"
           className="w-64 border-r border-white/5 bg-[#161616] p-0 pt-10"
         >
-          <SidebarContent onNavigate={() => setIsSheetOpen(false)} />
+          <SidebarContent
+            onNavigate={() => setIsSheetOpen(false)}
+            onCreatePlaylist={openCreatePlaylist}
+          />
         </SheetContent>
       </Sheet>
+
+      <CreatePlaylistModal
+        trigger={null}
+        open={isCreatePlaylistOpen}
+        onOpenChange={setIsCreatePlaylistOpen}
+      />
     </>
   );
 }
