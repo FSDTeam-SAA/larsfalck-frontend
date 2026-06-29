@@ -22,10 +22,16 @@ import { useUserProfile } from "@/lib/use-user-profile";
 import { createPlaylist } from "./playlist-api";
 
 type CreatePlaylistModalProps = {
-  trigger?: ReactElement;
+  trigger?: ReactElement | null;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
-export function CreatePlaylistModal({ trigger }: CreatePlaylistModalProps = {}) {
+export function CreatePlaylistModal({
+  trigger,
+  open,
+  onOpenChange,
+}: CreatePlaylistModalProps = {}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const {
@@ -36,9 +42,10 @@ export function CreatePlaylistModal({ trigger }: CreatePlaylistModalProps = {}) 
     isProfileLoading,
   } = useUserProfile();
   const canCreatePlaylist = isAuthenticated && !trialExpired;
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [playlistName, setPlaylistName] = useState("");
   const [formError, setFormError] = useState("");
+  const modalOpen = open ?? internalOpen;
 
   const createPlaylistMutation = useMutation({
     mutationFn: () =>
@@ -77,7 +84,8 @@ export function CreatePlaylistModal({ trigger }: CreatePlaylistModalProps = {}) 
   function handleOpenChange(nextOpen: boolean) {
     if (nextOpen && !canCreatePlaylist) return;
 
-    setOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+    if (open === undefined) setInternalOpen(nextOpen);
 
     if (!nextOpen) resetForm();
   }
@@ -108,18 +116,20 @@ export function CreatePlaylistModal({ trigger }: CreatePlaylistModalProps = {}) 
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {trigger ?? (
-          <Button
-            disabled={!canCreatePlaylist || isProfileLoading}
-            className="h-10 gap-2 rounded-full px-3 text-sm text-black sm:h-12 sm:px-4 sm:text-base"
-          >
-            <CirclePlus className="size-4 sm:size-5" />
-            <span className="whitespace-nowrap">Create Playlist</span>
-          </Button>
-        )}
-      </DialogTrigger>
+    <Dialog open={modalOpen} onOpenChange={handleOpenChange}>
+      {trigger !== null && (
+        <DialogTrigger asChild>
+          {trigger ?? (
+            <Button
+              disabled={!canCreatePlaylist || isProfileLoading}
+              className="h-10 gap-2 rounded-full px-3 text-sm text-black sm:h-12 sm:px-4 sm:text-base"
+            >
+              <CirclePlus className="size-4 sm:size-5" />
+              <span className="whitespace-nowrap">Create Playlist</span>
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
 
       <DialogContent
         showCloseButton={false}
