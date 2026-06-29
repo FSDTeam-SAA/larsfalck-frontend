@@ -21,6 +21,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserProfile } from "@/lib/use-user-profile";
 import { cn } from "@/lib/utils";
+import { CreatePlaylistModal } from "@/app/(website)/playlists/_components/CreatePlaylistModal";
 import { getMyPlaylists } from "@/app/(website)/playlists/_components/playlist-api";
 
 const navItems = [
@@ -82,12 +83,18 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
           My Playlists
         </span>
-        <button
-          type="button"
-          className="flex h-5 w-5 items-center justify-center rounded text-zinc-400 hover:bg-[#2a2a2a] hover:text-white"
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </button>
+        <CreatePlaylistModal
+          trigger={
+            <button
+              type="button"
+              disabled={!canUsePlaylists || isProfileLoading}
+              aria-label="Create playlist"
+              className="flex h-5 w-5 items-center justify-center rounded text-zinc-400 hover:bg-[#2a2a2a] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          }
+        />
       </div>
 
       <div className="flex flex-col gap-3 px-2 pb-3">

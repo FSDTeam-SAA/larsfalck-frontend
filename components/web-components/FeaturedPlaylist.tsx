@@ -40,13 +40,18 @@ function formatSongCount(count: number) {
   return `${count.toLocaleString()} ${count === 1 ? "Song" : "Songs"}`;
 }
 
-export function FeaturedPlaylist() {
+type FeaturedPlaylistProps = {
+  showAll?: boolean;
+};
+
+export function FeaturedPlaylist({ showAll = false }: FeaturedPlaylistProps) {
   const { data: playlists = [], isPending, error } = useQuery({
     queryKey: ["public-playlists"],
     queryFn: getPublicPlaylists,
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
+  const visiblePlaylists = showAll ? playlists : playlists.slice(0, 5);
 
   if (isPending) {
     return <FeaturedPlaylistSkeleton />;
@@ -58,12 +63,14 @@ export function FeaturedPlaylist() {
         <h2 className="text-xl font-semibold text-[#FFFFFF] sm:text-3xl lg:text-4xl">
           Featured Playlists
         </h2>
-        <Link
-          href="/songs"
-          className="text-sm font-medium text-[#A8A8A8] hover:text-white sm:text-lg"
-        >
-          Show all
-        </Link>
+        {!showAll && (
+          <Link
+            href="/featured-playlists"
+            className="text-sm font-medium text-[#A8A8A8] hover:text-white sm:text-lg"
+          >
+            Show all
+          </Link>
+        )}
       </div>
 
       {error ? (
@@ -74,7 +81,7 @@ export function FeaturedPlaylist() {
         </p>
       ) : playlists.length > 0 ? (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {playlists.map((playlist) => (
+          {visiblePlaylists.map((playlist) => (
             <MusicCard
               key={playlist._id}
               href={`/playlists/${playlist._id}?name=${encodeURIComponent(
