@@ -380,6 +380,15 @@ export function PlaylistDetails({
     playQueue(playerTracks, { shuffle: true });
   }
 
+  function handleSongPlayback(songId: string) {
+    if (currentTrack?.id === songId) {
+      togglePlay();
+      return;
+    }
+
+    playQueue(playerTracks, { startTrackId: songId });
+  }
+
   function handleSongAction(songId: string, isAdded: boolean) {
     if (!canUseAccount || songMutation.isPending) return;
 
@@ -547,11 +556,37 @@ export function PlaylistDetails({
             playlistSongs.map((song, index) => (
               <div
                 key={song._id}
-                className="grid grid-cols-[24px_minmax(0,1fr)_44px_24px] items-center gap-2 rounded-md px-1 py-3 transition-colors hover:bg-white/5 md:grid-cols-[32px_minmax(180px,1.4fr)_minmax(120px,1fr)_minmax(110px,0.8fr)_24px_44px_24px] md:gap-3"
+                className="group grid grid-cols-[24px_minmax(0,1fr)_44px_24px] items-center gap-2 rounded-md px-1 py-3 transition-colors hover:bg-white/5 md:grid-cols-[32px_minmax(180px,1.4fr)_minmax(120px,1fr)_minmax(110px,0.8fr)_24px_44px_24px] md:gap-3"
               >
-                <span className="text-center text-sm text-[#C7C7C7]">
-                  {index + 1}
-                </span>
+                <button
+                  type="button"
+                  onClick={() => handleSongPlayback(song._id)}
+                  disabled={!song.audioFile}
+                  className={cn(
+                    "inline-flex size-6 items-center justify-center justify-self-center text-sm text-[#C7C7C7] transition hover:text-white disabled:cursor-not-allowed disabled:opacity-40",
+                    currentTrack?.id === song._id && "text-[#00EF01]",
+                  )}
+                  aria-label={
+                    currentTrack?.id === song._id && isPlaying
+                      ? `Pause ${song.name}`
+                      : `Play ${song.name}`
+                  }
+                >
+                  {currentTrack?.id === song._id ? (
+                    isPlaying ? (
+                      <Pause className="size-4 fill-current" />
+                    ) : (
+                      <Play className="size-4 fill-current" />
+                    )
+                  ) : (
+                    <>
+                      <span className="group-hover:hidden">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <Play className="hidden size-4 fill-current group-hover:block" />
+                    </>
+                  )}
+                </button>
 
                 <div className="flex min-w-0 items-center gap-2.5">
                   <div className="relative aspect-[533/620] w-9 shrink-0 overflow-hidden rounded-sm bg-white/5">
