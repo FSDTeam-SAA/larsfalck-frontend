@@ -105,6 +105,7 @@ export function Navbar() {
   const avatarFallback =
     (displayName || "User").trim().charAt(0).toUpperCase() || "U";
   const isHomePage = pathname === "/";
+  const isAboutPage = pathname === "/about-us";
 
   return (
     <>
@@ -119,9 +120,9 @@ export function Navbar() {
           aria-label="Go to homepage"
           className={cn("shrink-0", isMobileSearchOpen && "hidden md:block")}
         >
-          <div className="hidden h-14 w-[157px] lg:block">
+          <div className="hidden h-14 w-[187px] lg:block">
             <Image
-              src="/logo.png"
+              src="/logo1.png"
               alt="Logo"
               width={1000}
               height={1000}
@@ -216,9 +217,26 @@ export function Navbar() {
         >
           <Button
             asChild
+            className={cn(
+              "h-8 rounded-full border border-white/15 bg-white/5 px-2.5 text-[11px] font-medium text-white hover:bg-white/10 hover:text-white sm:h-9 sm:px-4 sm:text-base",
+              isAboutPage &&
+                "border-[#00EF01] bg-[#00EF01] text-black hover:bg-[#1ed760] hover:text-black",
+            )}
+          >
+            <Link href="/about-us">
+              <span className="sm:hidden">About</span>
+              <span className="hidden sm:inline">About Us</span>
+            </Link>
+          </Button>
+
+          <Button
+            asChild
             className="h-8 rounded-full bg-[#00EF01] px-2.5 text-[11px] font-medium text-black hover:bg-[#1ed760]/90 sm:h-9 sm:px-5 sm:text-base"
           >
-            <Link href="/subscription">Explore Premium</Link>
+            <Link href="/subscription">
+              <span className="sm:hidden">Premium</span>
+              <span className="hidden sm:inline">Explore Premium</span>
+            </Link>
           </Button>
 
           {status === "loading" ? (

@@ -146,11 +146,14 @@ export default function SearchResultsClient() {
           ) : allTags.length > 0 ? (
             allTags.map((tag) => {
               const selected = tags.includes(tag.name);
+              const nextTags = selected
+                ? tags.filter((selectedTag) => selectedTag !== tag.name)
+                : [...tags, tag.name];
 
               return (
                 <Link
                   key={tag._id}
-                  href={buildSearchHref({ query, tags: [tag.name] })}
+                  href={buildSearchHref({ query, tags: nextTags })}
                   className={cn(
                     "rounded-full border border-white/15 px-3 py-1.5 text-xs text-[#CFCFCF] transition hover:border-white/30 hover:text-white",
                     selected &&
