@@ -1,98 +1,95 @@
-import Image from "next/image";
-import Link from "next/link";
+"use client";
 
-const points = [
+import { Copyright, Globe2 } from "lucide-react";
+
+const details = [
   {
-    title: "Cleared rights",
-    text: "Master Rights, Publishing Rights, and Neighbouring Rights are cleared and ready to use.",
+    icon: Copyright,
+    text: "The music is licensed from a music publisher who owns 100% of all Copyrights, (Master Rights, Publishing rights & Neighbouring rights) everything is cleared and ready to use",
   },
   {
-    title: "Global catalog",
-    text: "Music is sourced from composers, recording studios, music publishers, and record companies around the world.",
-  },
-  {
-    title: "Project ready",
-    text: "Find high-quality tracks for movies, advertising, TV series, and multimedia projects.",
+    icon: Globe2,
+    text: "The music is purchased directly from Composers, Recordings Studios, Music Publishers & Record Companies around the world, which may include AI created songs.",
   },
 ];
 
 export default function AboutUsPage() {
   return (
-    <section className="min-h-full overflow-hidden rounded-[12px] bg-[#FFFFFF1A] text-white">
-      <div className="relative min-h-[360px] px-5 py-12 sm:px-8 lg:px-12">
-        <Image
-          src="/banner.png"
-          alt="BeatBoks music catalog"
-          fill
-          priority
-          sizes="(min-width: 1024px) 70vw, 100vw"
-          className="object-cover opacity-30"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0e0e0e] via-[#0e0e0e]/80 to-[#0e0e0e]/30" />
-
-        <div className="relative z-10 flex min-h-[260px] max-w-3xl flex-col justify-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#00EF01]">
-            About Us
-          </p>
-          <h1 className="mt-4 text-4xl font-extrabold leading-tight sm:text-6xl">
-            Music cleared for every story.
-          </h1>
-          <p className="mt-5 max-w-2xl text-base leading-7 text-[#D6D6D6] sm:text-lg">
-            BeatBoks Music Group gives access to over 5,000 tracks in a unique,
-            extensive catalog to find high-quality music for your movie,
-            advertising, TV series, or other multimedia projects.
-          </p>
-          <div className="mt-8">
-            <Link
-              href="/search"
-              className="inline-flex h-11 items-center justify-center rounded-full bg-[#00EF01] px-6 text-sm font-semibold text-black transition hover:bg-[#1ed760]"
-            >
-              Explore Catalog
-            </Link>
-          </div>
-        </div>
+    <section className="relative min-h-full overflow-hidden rounded-[12px] bg-[#FFFFFF1A] text-white">
+      {/* ambient equalizer backdrop */}
+      <div className="pointer-events-none absolute inset-0 flex items-end justify-center gap-1 opacity-[0.07]">
+        {Array.from({ length: 40 }).map((_, i) => (
+          <span
+            key={i}
+            className="w-2 rounded-t-sm bg-[#00EF01]"
+            style={{
+              height: `${20 + ((i * 37) % 80)}%`,
+              animation: `eqPulse 2.4s ease-in-out infinite`,
+              animationDelay: `${(i % 8) * 0.15}s`,
+            }}
+          />
+        ))}
       </div>
+     
 
-      <div className="px-5 py-8 sm:px-8 lg:px-12">
-        <div className="grid gap-3 md:grid-cols-3">
-          {points.map((point) => (
-            <article
-              key={point.title}
-              className="rounded-lg border border-white/10 bg-white/5 p-5"
-            >
-              <h2 className="text-lg font-semibold text-white">
-                {point.title}
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-[#A8A8A8]">
-                {point.text}
+      <div className="relative z-10 flex min-h-full flex-col justify-center gap-10 px-5 py-12 sm:px-8 lg:px-14 ">
+        <div className="mx-auto w-full  ">
+          {/* eyebrow */}
+          <div className="mb-6 flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#00EF01] shadow-[0_0_10px_2px_#00EF01]" />
+            <span className="text-xs font-semibold uppercase tracking-[0.25em] text-[#00EF01]">
+              BeatBoks Music Group
+            </span>
+          </div>
+
+          {/* hero stat block */}
+          <div className="mb-6 flex flex-col gap-6 rounded-2xl border border-[#00EF01]/25 bg-black/50 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.4)] backdrop-blur sm:p-10 lg:flex-row lg:items-center">
+            <div className="shrink-0">
+              <p className="bg-gradient-to-b from-white to-[#00EF01] bg-clip-text text-6xl font-extrabold leading-none text-transparent sm:text-7xl lg:text-8xl">
+                5,000+
               </p>
-            </article>
-          ))}
-        </div>
-
-        <div className="mt-8 grid gap-6 rounded-lg border border-white/10 bg-[#0e0e0e]/45 p-5 sm:p-7 lg:grid-cols-[1fr_1.2fr]">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#00EF01]">
-              Rights
+              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#7A7A7A]">
+                Tracks in our catalog
+              </p>
+            </div>
+            <div className="hidden h-20 w-px bg-white/10 lg:block" />
+            <p className="text-lg leading-[135%] text-[#D6D6D6] sm:text-2xl lg:text-2xl">
+              Access to a unique, extensive catalog to find high-quality music
+              for every setting — your movie, advertising, TV series or other
+              multimedia projects.
             </p>
-            <h2 className="mt-3 text-2xl font-bold text-white sm:text-3xl">
-              100% copyright ownership cleared through the publisher.
-            </h2>
           </div>
-          <div className="space-y-4 text-sm leading-7 text-[#CFCFCF] sm:text-base">
-            <p>
-              The music is licensed from a music publisher who owns 100% of all
-              copyrights: Master Rights, Publishing Rights, and Neighbouring
-              Rights.
-            </p>
-            <p>
-              The catalog is purchased directly from composers, recording
-              studios, music publishers, and record companies around the world,
-              which may include AI-created songs.
-            </p>
+
+          {/* supporting details */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {details.map(({ icon: Icon, text }) => (
+              <div
+                key={text}
+                className="group rounded-xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-[#00EF01]/40 hover:bg-white/[0.07] sm:p-6"
+              >
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-[#00EF01]/10 text-[#00EF01] transition-colors group-hover:bg-[#00EF01]/20">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <p className="text-sm leading-6 text-[#B8B8B8] sm:text-base">
+                  {text}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes eqPulse {
+          0%,
+          100% {
+            transform: scaleY(0.6);
+          }
+          50% {
+            transform: scaleY(1);
+          }
+        }
+      `}</style>
     </section>
   );
 }
