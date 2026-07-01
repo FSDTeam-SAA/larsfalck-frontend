@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CircleCheck,
+  CircleMinus,
   Clock3,
   MoreHorizontal,
   Pause,
@@ -542,90 +543,120 @@ export function PlaylistDetails({
         </div>
 
         <div className="mt-4">
-          <div className="hidden grid-cols-[32px_minmax(180px,1.4fr)_minmax(120px,1fr)_minmax(110px,0.8fr)_24px_44px_24px] items-center gap-3 border-b border-white/5 px-1 pb-3 text-base text-[#C7C7C7] md:grid">
+          <div className="hidden grid-cols-[32px_minmax(180px,1.4fr)_minmax(120px,1fr)_minmax(110px,0.8fr)_32px_24px_44px] items-center gap-3 border-b border-white/5 px-1 pb-3 text-base text-[#C7C7C7] md:grid">
             <span>#</span>
             <span>Title</span>
             <span>Album</span>
             <span>Date added</span>
             <span />
-            <Clock3 className="mx-auto size-4" aria-label="Duration" />
             <span />
+            <Clock3 className="mx-auto size-4" aria-label="Duration" />
           </div>
 
           {playlistSongs.length > 0 ? (
-            playlistSongs.map((song, index) => (
-              <div
-                key={song._id}
-                className="group grid grid-cols-[24px_minmax(0,1fr)_44px_24px] items-center gap-2 rounded-md px-1 py-3 transition-colors hover:bg-white/5 md:grid-cols-[32px_minmax(180px,1.4fr)_minmax(120px,1fr)_minmax(110px,0.8fr)_24px_44px_24px] md:gap-3"
-              >
-                <button
-                  type="button"
-                  onClick={() => handleSongPlayback(song._id)}
-                  disabled={!song.audioFile}
-                  className={cn(
-                    "inline-flex size-6 items-center justify-center justify-self-center text-sm text-[#C7C7C7] transition hover:text-white disabled:cursor-not-allowed disabled:opacity-40",
-                    currentTrack?.id === song._id && "text-[#00EF01]",
-                  )}
-                  aria-label={
-                    currentTrack?.id === song._id && isPlaying
-                      ? `Pause ${song.name}`
-                      : `Play ${song.name}`
-                  }
+            playlistSongs.map((song, index) => {
+              const isRemoving =
+                songMutation.isPending &&
+                songMutation.variables?.songId === song._id &&
+                songMutation.variables.action === "remove";
+
+              return (
+                <div
+                  key={song._id}
+                  className="group grid grid-cols-[24px_minmax(0,1fr)_32px_44px] items-center gap-2 rounded-md px-1 py-3 transition-colors hover:bg-white/5 md:grid-cols-[32px_minmax(180px,1.4fr)_minmax(120px,1fr)_minmax(110px,0.8fr)_32px_24px_44px] md:gap-3"
                 >
-                  {currentTrack?.id === song._id ? (
-                    isPlaying ? (
-                      <Pause className="size-4 fill-current" />
+                  <button
+                    type="button"
+                    onClick={() => handleSongPlayback(song._id)}
+                    disabled={!song.audioFile}
+                    className={cn(
+                      "inline-flex size-6 items-center justify-center justify-self-center text-sm text-[#C7C7C7] transition hover:text-white disabled:cursor-not-allowed disabled:opacity-40",
+                      currentTrack?.id === song._id && "text-[#00EF01]",
+                    )}
+                    aria-label={
+                      currentTrack?.id === song._id && isPlaying
+                        ? `Pause ${song.name}`
+                        : `Play ${song.name}`
+                    }
+                  >
+                    {currentTrack?.id === song._id ? (
+                      isPlaying ? (
+                        <Pause className="size-4 fill-current" />
+                      ) : (
+                        <Play className="size-4 fill-current" />
+                      )
                     ) : (
-                      <Play className="size-4 fill-current" />
-                    )
-                  ) : (
-                    <>
-                      <span className="group-hover:hidden">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <Play className="hidden size-4 fill-current group-hover:block" />
-                    </>
-                  )}
-                </button>
+                      <>
+                        <span className="group-hover:hidden">
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
+                        <Play className="hidden size-4 fill-current group-hover:block" />
+                      </>
+                    )}
+                  </button>
 
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <div className="relative aspect-[533/620] w-9 shrink-0 overflow-hidden rounded-sm bg-white/5">
-                    <Image
-                      src={song.coverImage || "/albam.png"}
-                      alt=""
-                      fill
-                      sizes="36px"
-                      className="object-cover"
-                    />
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <div className="relative aspect-[533/620] w-9 shrink-0 overflow-hidden rounded-sm bg-white/5">
+                      <Image
+                        src={song.coverImage || "/albam.png"}
+                        alt=""
+                        fill
+                        sizes="36px"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <h3
+                        className={cn(
+                          "truncate text-sm font-medium text-white sm:text-base",
+                          currentTrack?.id === song._id && "text-[#00EF01]",
+                        )}
+                      >
+                        {song.name}
+                      </h3>
+                      <p className="truncate text-xs text-[#A8A8A8]">
+                        {getSongArtists(song)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h3
-                      className={cn(
-                        "truncate text-sm font-medium text-white sm:text-base",
-                        currentTrack?.id === song._id && "text-[#00EF01]",
-                      )}
-                    >
-                      {song.name}
-                    </h3>
-                    <p className="truncate text-xs text-[#A8A8A8]">
-                      {getSongArtists(song)}
-                    </p>
+
+                  <p className="hidden truncate text-base text-[#E0E0E0] md:block">
+                    {getSongAlbum(song)}
+                  </p>
+                  <p className="hidden truncate text-base text-[#E0E0E0] md:block">
+                    {formatDate(song.createdAt)}
+                  </p>
+                  <div className="relative flex justify-center">
+                    {canEditPlaylist ? (
+                      <button
+                        type="button"
+                        title="Remove from playlist"
+                        aria-label={`Remove ${song.name} from playlist`}
+                        disabled={songMutation.isPending}
+                        onClick={() => handleSongAction(song._id, true)}
+                        className="group/remove inline-flex size-7 items-center justify-center rounded-full text-red-500 transition hover:border-red-300 hover:bg-red-500/10 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-45"
+                      >
+                        <CircleMinus
+                          className={cn(
+                            "size-4",
+                            isRemoving && "animate-pulse",
+                          )}
+                        />
+                        <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-black px-2 py-1 text-[11px] font-medium text-white shadow-lg ring-1 ring-white/10 group-hover/remove:block">
+                          Remove from playlist
+                        </span>
+                      </button>
+                    ) : (
+                      <span className="size-7" aria-hidden="true" />
+                    )}
                   </div>
+                  <CircleCheck className="hidden size-5 text-[#00EF01] md:block" />
+                  <span className="text-right text-base text-[#D7D7D7] md:text-center">
+                    {formatDuration(song.duration)}
+                  </span>
                 </div>
-
-                <p className="hidden truncate text-base text-[#E0E0E0] md:block">
-                  {getSongAlbum(song)}
-                </p>
-                <p className="hidden truncate text-base text-[#E0E0E0] md:block">
-                  {formatDate(song.createdAt)}
-                </p>
-                <CircleCheck className="hidden size-5 text-[#00EF01] md:block" />
-                <span className="text-right text-base text-[#D7D7D7] md:text-center">
-                  {formatDuration(song.duration)}
-                </span>
-              
-              </div>
-            ))
+              );
+            })
           ) : (
             <p className="rounded-md bg-white/5 px-4 py-8 text-center text-sm text-[#A8A8A8]">
               No songs added to this playlist yet.
