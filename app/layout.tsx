@@ -16,7 +16,7 @@ const wixMadeforText = Wix_Madefor_Text({
 
 export const metadata: Metadata = {
   title: "BEATBOX",
-  description: "Listen to music with a beatboxmusic aaaaaaaaaaaaaaaaaabbbbbbbbbbbcccccccccccc a.",
+  description: "Listen to music with a beatboxmusic amit vaiiiiiiii",
   icons: {
     icon: "/fav1.png",
   }
