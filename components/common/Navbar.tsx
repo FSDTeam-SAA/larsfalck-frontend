@@ -106,6 +106,7 @@ export function Navbar() {
     (displayName || "User").trim().charAt(0).toUpperCase() || "U";
   const isHomePage = pathname === "/";
   const isAboutPage = pathname === "/about-us";
+  const isPremiumPage = pathname.startsWith("/subscription");
 
   return (
     <>
@@ -231,7 +232,11 @@ export function Navbar() {
 
           <Button
             asChild
-            className="h-8 rounded-full bg-[#00EF01] px-2.5 text-[11px] font-medium text-black hover:bg-[#1ed760]/90 sm:h-9 sm:px-5 sm:text-base"
+            className={cn(
+              "h-8 rounded-full border border-white/15 bg-white/5 px-2.5 text-[11px] font-medium text-white hover:bg-white/10 hover:text-white sm:h-9 sm:px-5 sm:text-base",
+              isPremiumPage &&
+                "border-[#00EF01] bg-[#00EF01] text-black hover:bg-[#1ed760] hover:text-black",
+            )}
           >
             <Link href="/subscription">
               <span className="sm:hidden">Premium</span>
