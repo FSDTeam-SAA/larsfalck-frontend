@@ -32,7 +32,7 @@ const SuccessfullyApprovedModal: React.FC<SuccessfullyApprovedModalProps> = ({
         <DialogHeader className="gap-0">
           <div className="flex items-center justify-center pb-3 pr-8">
               <Image
-                src="/logo.png"
+                src="/logo1.png"
                 alt="password reset successfully"
                 width={400}
                 height={400}

@@ -99,7 +99,7 @@ const ResetPasswordForm = () => {
     <div className="mx-auto w-full max-w-[537px] rounded-[12px] border border-[#333333] bg-white/10 p-4 sm:p-5 md:p-6">
       <div className="w-full flex items-center justify-center pb-6">
         <Link href="/">
-          <Image src="/logo.png" alt="auth logo" width={500} height={500} className="w-[180px] h-[60px] object-contain" />
+          <Image src="/logo1.png" alt="auth logo" width={500} height={500} className="w-[180px] h-[60px] object-contain" />
         </Link>
       </div>
 
