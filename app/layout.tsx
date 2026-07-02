@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "BEATBOX",
   description: "Listen to music with a beatboxmusic ",
   icons: {
-    icon: "/fav1.png",
+    icon: "/fav2.png",
   }
 };
 
