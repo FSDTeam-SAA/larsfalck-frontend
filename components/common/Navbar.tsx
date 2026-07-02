@@ -133,7 +133,7 @@ export function Navbar() {
 
           <div className="size-8 lg:hidden">
             <Image
-              src="/fav.png"
+              src="/fav1.png"
               alt="Logo"
               width={48}
               height={48}
