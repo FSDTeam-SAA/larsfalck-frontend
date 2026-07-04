@@ -84,10 +84,11 @@ async function getArtistDetails(artistId: string): Promise<ArtistDetailsData> {
   );
 
   const result = (await response.json()) as ArtistDetailsResponse;
-
+  
   if (!response.ok || !result.success || !result.data?.artist) {
     throw new Error(result.message || "Could not load artist profile");
   }
+  
 
   return {
     artist: result.data.artist,
@@ -112,6 +113,8 @@ export default function ArtistDetailsClient({
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
+
+ 
 
   if (isPending) {
     return <ArtistDetailsSkeleton />;

@@ -14,6 +14,7 @@ import {
 } from "@/components/providers/PlayerProvider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 import {
   formatDuration,
@@ -200,15 +201,13 @@ export default function SingleSongDetails({ songId }: SingleSongDetailsProps) {
   const isCurrentSong = currentTrack?.id === song._id;
   const canPlay = Boolean(song.audioFile);
 
-  function handlePlaySong() {
-    if (!song) return;
-
-    if (currentTrack?.id === song._id) {
+  function handleSongPlayback(songId: string) {
+    if (currentTrack?.id === songId) {
       togglePlay();
       return;
     }
 
-    playQueue(playerTracks, { startTrackId: song._id });
+    playQueue(playerTracks, { startTrackId: songId });
   }
 
   return (
@@ -264,7 +263,7 @@ export default function SingleSongDetails({ songId }: SingleSongDetailsProps) {
             type="button"
             size="icon"
             aria-label={isCurrentSong && isPlaying ? "Pause song" : "Play song"}
-            onClick={handlePlaySong}
+            onClick={() => handleSongPlayback(song._id)}
             disabled={!canPlay}
             className="size-11 rounded-full bg-[#00EF01] text-black hover:scale-105 hover:bg-[#00D801] disabled:cursor-not-allowed disabled:opacity-40"
           >
@@ -309,6 +308,9 @@ export default function SingleSongDetails({ songId }: SingleSongDetailsProps) {
               <RecommendedSongRow
                 key={item._id}
                 index={index}
+                isCurrent={currentTrack?.id === item._id}
+                isPlaying={isPlaying}
+                onPlay={handleSongPlayback}
                 song={item}
               />
             ))}
@@ -325,9 +327,15 @@ export default function SingleSongDetails({ songId }: SingleSongDetailsProps) {
 
 function RecommendedSongRow({
   index,
+  isCurrent,
+  isPlaying,
+  onPlay,
   song,
 }: {
   index: number;
+  isCurrent: boolean;
+  isPlaying: boolean;
+  onPlay: (songId: string) => void;
   song: Song;
 }) {
   return (
@@ -338,9 +346,33 @@ function RecommendedSongRow({
         className="absolute inset-0 z-10 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00EF01] focus-visible:ring-offset-2 focus-visible:ring-offset-[#181818]"
       />
 
-      <span className="text-center text-xs text-[#D4D4D4] sm:text-sm">
-        {String(index + 1).padStart(2, "0")}
-      </span>
+      <button
+        type="button"
+        onClick={() => onPlay(song._id)}
+        disabled={!song.audioFile}
+        aria-label={
+          isCurrent && isPlaying ? `Pause ${song.name}` : `Play ${song.name}`
+        }
+        className={cn(
+          "relative z-20 inline-flex size-6 items-center justify-center justify-self-center text-xs text-[#D4D4D4] transition hover:text-white disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm",
+          isCurrent && "text-[#00EF01]",
+        )}
+      >
+        {isCurrent ? (
+          isPlaying ? (
+            <Pause className="size-4 fill-current" />
+          ) : (
+            <Play className="size-4 fill-current" />
+          )
+        ) : (
+          <>
+            <span className="group-hover:hidden">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <Play className="hidden size-4 fill-current group-hover:block" />
+          </>
+        )}
+      </button>
 
       <div className="relative size-9 overflow-hidden rounded-sm bg-white/5 sm:size-10">
         <Image
@@ -353,7 +385,12 @@ function RecommendedSongRow({
       </div>
 
       <div className="min-w-0">
-        <h3 className="truncate text-sm font-medium text-white sm:text-base">
+        <h3
+          className={cn(
+            "truncate text-sm font-medium text-white sm:text-base",
+            isCurrent && "text-[#00EF01]",
+          )}
+        >
           {song.name}
         </h3>
         <p className="truncate text-xs text-[#A8A8A8] sm:hidden">
