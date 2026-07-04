@@ -14,7 +14,15 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "larsfalck-media1.s3.eu-north-1.amazonaws.com",
+      },
+      {
+        protocol: "https",
         hostname: "res.cloudinary.com",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.beatboksmusic.com",
       },
     ],
   },
