@@ -2,7 +2,9 @@ export interface PlanItem {
   _id: string;
   name: string;
   price: number;
+  pricePerSeat: number;
   billingCycle: string;
+  planType: "individual" | "organization";
   features: string[];
   status: string;
   createdAt: string;
@@ -63,7 +65,9 @@ export interface SubscriptionPlanCardData {
   id: string;
   name: string;
   price: number;
+  pricePerSeat: number;
   billingCycle: string;
+  planType: "individual" | "organization";
   features: string[];
   buttonLabel: string;
   tone: PlanTone;

@@ -1,9 +1,19 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useSession } from "next-auth/react";
 import { CircleCheck } from "lucide-react";
-import { useState } from "react";
+import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import type {
   CheckoutApiResponse,
@@ -51,8 +61,12 @@ const PlanCard = ({ plan }: { plan: SubscriptionPlanCardData }) => {
   const { data: session, status } = useSession();
   const token = (session?.user as { accessToken?: string })?.accessToken;
   const [isLoading, setIsLoading] = useState(false);
+  const [isOrgModalOpen, setIsOrgModalOpen] = useState(false);
+  const [businessName, setBusinessName] = useState("");
+  const [seats, setSeats] = useState("1");
+  const isOrganizationPlan = plan.planType === "organization";
 
-  const handleCheckout = async () => {
+  const createCheckout = async (endpoint: string, payload: object) => {
     if (!plan?.id) return;
 
     if (!token) {
@@ -64,14 +78,14 @@ const PlanCard = ({ plan }: { plan: SubscriptionPlanCardData }) => {
       setIsLoading(true);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/subscription/checkout`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}${endpoint}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ planId: plan?.id }),
+          body: JSON.stringify(payload),
         },
       );
       const result = (await response.json()) as CheckoutApiResponse;
@@ -90,46 +104,150 @@ const PlanCard = ({ plan }: { plan: SubscriptionPlanCardData }) => {
     }
   };
 
+  const handleCheckout = async () => {
+    if (isOrganizationPlan) {
+      if (!token) {
+        toast.error("Please login to buy a plan");
+        return;
+      }
+
+      setIsOrgModalOpen(true);
+      return;
+    }
+
+    await createCheckout("/subscription/checkout", { planId: plan?.id });
+  };
+
+  const handleOrganizationCheckout = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+
+    const seatCount = Number(seats);
+    const trimmedBusinessName = businessName.trim();
+
+    if (!trimmedBusinessName) {
+      toast.error("Business name is required");
+      return;
+    }
+
+    if (!Number.isInteger(seatCount) || seatCount < 1) {
+      toast.error("Seats must be at least 1");
+      return;
+    }
+
+    await createCheckout("/organization/checkout", {
+      planId: plan?.id,
+      businessName: trimmedBusinessName,
+      seats: seatCount,
+    });
+  };
+
   return (
-    <article
-      className={`flex min-h-[424px] flex-col rounded-[16px] border p-5 md:p-6  transition-transform duration-200 hover:-translate-y-0.5 ${styles.card}`}
-    >
-      <div>
-        <h3
-          className={`text-2xl md:text-3xl lg:text-4xl font-semibold leading-[120%] ${styles.title}`}
-        >
-          {plan?.name || "N/A"}
-        </h3>
-        <div className="flex items-end gap-1 pt-3">
-          <p className="text-xl md:text-2xl lg:text-3xl font-semibold leading-[120%] text-white">
-            {formatPrice(plan?.price || 0)}
-          </p>
-          <span className="text-base md:text-lg font-semibold leading-[120%] text-[#E8E8F0]">
-            /{plan.billingCycle}
-          </span>
-        </div>
-      </div>
-
-      <ul className="space-y-4 pt-6">
-        {plan.features.map((feature) => (
-          <li key={feature} className="flex items-center gap-2">
-            <CircleCheck className={`size-4 shrink-0 ${styles.icon}`} />
-            <span className="text-sm md:text-base font-normal leading-[120%] text-white">
-              {feature}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      <Button
-        type="button"
-        onClick={handleCheckout}
-        disabled={isLoading || status === "loading"}
-        className={`mt-auto h-12 w-full rounded-full text-sm md:text-base font-medium leading-[120%] shadow-none ${styles.button}`}
+    <>
+      <article
+        className={`flex min-h-[424px] flex-col rounded-[16px] border p-5 md:p-6  transition-transform duration-200 hover:-translate-y-0.5 ${styles.card}`}
       >
-        {isLoading ? "Processing..." : plan?.buttonLabel}
-      </Button>
-    </article>
+        <div>
+          <h3
+            className={`text-2xl md:text-3xl lg:text-4xl font-semibold leading-[120%] ${styles.title}`}
+          >
+            {plan?.name || "N/A"}
+          </h3>
+          <div className="flex items-end gap-1 pt-3">
+            <p className="text-xl md:text-2xl lg:text-3xl font-semibold leading-[120%] text-white">
+              {formatPrice(plan?.price || 0)}
+            </p>
+            <span className="text-base md:text-lg font-semibold leading-[120%] text-[#E8E8F0]">
+              /{plan.billingCycle}
+            </span>
+          </div>
+        </div>
+
+        <ul className="space-y-4 pt-6">
+          {plan.features.map((feature) => (
+            <li key={feature} className="flex items-center gap-2">
+              <CircleCheck className={`size-4 shrink-0 ${styles.icon}`} />
+              <span className="text-sm md:text-base font-normal leading-[120%] text-white">
+                {feature}
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        <Button
+          type="button"
+          onClick={handleCheckout}
+          disabled={isLoading || status === "loading"}
+          className={`mt-auto h-12 w-full rounded-full text-sm md:text-base font-medium leading-[120%] shadow-none ${styles.button}`}
+        >
+          {isLoading ? "Processing..." : plan?.buttonLabel}
+        </Button>
+      </article>
+
+      <Dialog open={isOrgModalOpen} onOpenChange={setIsOrgModalOpen}>
+        <DialogContent
+          className="border border-white/10 bg-[#242424] text-white sm:max-w-[480px]"
+          overlayClassName="bg-black/50"
+        >
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-semibold">Organization checkout</DialogTitle>
+            <DialogDescription className="text-[#A8A8A8] text-base">
+              Add your business name and seat count.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleOrganizationCheckout} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor={`business-name-${plan.id}`} className="text-white text-xl">
+                Business Name
+              </Label>
+              <Input
+                id={`business-name-${plan.id}`}
+                value={businessName}
+                onChange={(event) => setBusinessName(event.target.value)}
+                className="h-12 border-none !bg-[#333333] text-white placeholder:text-[#787878]"
+                placeholder="Enter your business name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor={`seats-${plan.id}`} className="text-white text-xl">
+                Seats
+              </Label>
+              <Input
+                id={`seats-${plan.id}`}
+                type="number"
+                min={1}
+                step={1}
+                value={seats}
+                onChange={(event) => setSeats(event.target.value)}
+                className="h-12 border-none !bg-[#333333] text-white [appearance:textfield] placeholder:text-[#787878] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                placeholder="10"
+              />
+            </div>
+
+            <DialogFooter className=" border-none">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsOrgModalOpen(false)}
+                className="h-11 rounded-[8px] border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="h-11 rounded-[8px] font-medium text-[#333333]"
+              >
+                {isLoading ? "Processing..." : "Continue"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

@@ -5,7 +5,7 @@ import { Crown } from "lucide-react";
 import { useSession } from "next-auth/react";
 import type { BillingHistoryApiResponse } from "./billing-history-data-type";
 
-const formatDate = (value?: string) =>
+const formatDate = (value?: string | null) =>
   value
     ? new Intl.DateTimeFormat("en-US", {
         month: "long",
@@ -49,7 +49,10 @@ const CurrentSubscription = () => {
   });
   const responseData = data?.data;
   const subscription = responseData?.subscription;
-  const isTrial = !subscription && Boolean(responseData?.trialEndsAt);
+  const hasPaidSubscription = Boolean(subscription?.planId);
+  const isTrial =
+    !hasPaidSubscription &&
+    (subscription?.status === "trial" || Boolean(responseData?.trialEndsAt));
   const trialDateLabel = responseData?.trialExpired
     ? "Trial ended on"
     : "Trial ends on";
@@ -58,21 +61,23 @@ const CurrentSubscription = () => {
     ? "Loading subscription..."
     : isError
       ? "Unable to load subscription"
-      : subscription
+      : hasPaidSubscription
         ? `You're on Beatbox ${subscription?.planId?.name}`
         : isTrial
-          ? "You're on Beatbox Free Trial"
+          ? "You're on Beatbox Trial Account"
         : "No active subscription";
-  const billingDetails = subscription
+  const billingDetails = hasPaidSubscription
     ? `Last billing on ${formatDate(subscription?.startDate)} - ${formatPrice(subscription?.planId?.price)}`
     : isTrial
       ? `${trialDateLabel} ${formatDate(responseData?.trialEndsAt || undefined)}`
     : "Choose a plan to get started";
   const subscriptionStatus = isLoading
     ? "Loading"
-    : subscription?.status === "active"
+    : isTrial
+      ? trialStatus
+      : subscription?.status === "active"
       ? "On Going"
-      : subscription?.status || (isTrial ? trialStatus : "Inactive");
+      : subscription?.status || "Inactive";
 
   return (
     <div className="flex justify-between items-center gap-2 md:gap-4 rounded-[12px] border border-[#006400] bg-[#1ED7600D] px-2 md:px-3 lg:px-4 py-3 md:py-4 lg:py-5">

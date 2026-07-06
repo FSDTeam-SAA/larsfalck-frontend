@@ -41,8 +41,14 @@ type GenresResponse = {
   };
 };
 
+const signupTypes = ["individual", "organization"] as const;
+
 const formSchema = z
   .object({
+    signupType: z.enum(signupTypes),
+
+    orgCode: z.string().trim().optional(),
+
     name: z
       .string()
       .min(2, { message: "Full name must be at least 2 characters." })
@@ -53,9 +59,7 @@ const formSchema = z
       .trim()
       .email({ message: "Please enter a valid email address." }),
 
-    preferredGenres: z
-      .array(z.string())
-      .min(1, { message: "Please select at least one genre." }),
+    preferredGenres: z.array(z.string()),
 
     password: z
       .string()
@@ -67,12 +71,34 @@ const formSchema = z
 
     rememberMe: z.boolean(),
   })
-  .refine((data) => data.password === data.confirmPassword, {
-    path: ["confirmPassword"],
-    message: "Passwords do not match.",
+  .superRefine((data, ctx) => {
+    if (data.signupType === "individual" && data.preferredGenres.length < 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["preferredGenres"],
+        message: "Please select at least one genre.",
+      });
+    }
+
+    if (data.signupType === "organization" && !data.orgCode) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["orgCode"],
+        message: "Organization code is required.",
+      });
+    }
+
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["confirmPassword"],
+        message: "Passwords do not match.",
+      });
+    }
   });
 
 type FormValues = z.infer<typeof formSchema>;
+type SignupType = FormValues["signupType"];
 
 async function getGenres(): Promise<Genre[]> {
   const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/genre`);
@@ -104,6 +130,8 @@ const SignupForm = () => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      signupType: "individual",
+      orgCode: "",
       name: "",
       email: "",
       preferredGenres: [],
@@ -112,6 +140,7 @@ const SignupForm = () => {
       rememberMe: true,
     },
   });
+  const signupType = form.watch("signupType");
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -133,20 +162,32 @@ const SignupForm = () => {
   const { mutate, isPending } = useMutation({
     mutationKey: ["signup"],
 
-    mutationFn: async (values: {
-      name: string;
-      email: string;
-      password: string;
-      preferredGenres: string[];
-    }) => {
+    mutationFn: async (values: FormValues) => {
+      const isOrganizationSignup = values.signupType === "organization";
+      const payload = isOrganizationSignup
+        ? {
+            orgCode: values.orgCode,
+            name: values.name,
+            email: values.email,
+            password: values.password,
+            preferredGenres: values.preferredGenres,
+          }
+        : {
+            name: values.name,
+            email: values.email,
+            password: values.password,
+            preferredGenres: values.preferredGenres,
+          };
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/register`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}${
+          isOrganizationSignup ? "/organization/join" : "/auth/register"
+        }`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(values),
+          body: JSON.stringify(payload),
         },
       );
 
@@ -179,15 +220,14 @@ const SignupForm = () => {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    const payload = {
-      name: values.name,
-      email: values.email,
-      password: values.password,
-      preferredGenres: values.preferredGenres,
-    };
+  function handleSignupTypeChange(type: SignupType) {
+    form.setValue("signupType", type);
+    form.clearErrors();
+    setIsGenreDropdownOpen(false);
+  }
 
-    mutate(payload);
+  function onSubmit(values: FormValues) {
+    mutate(values);
   }
 
   return (
@@ -208,15 +248,63 @@ const SignupForm = () => {
           Create an account
         </h3>
         <p className="px-2 text-sm font-normal leading-[150%] text-center text-[#D7D7D7] pb-1 sm:px-0 md:text-lg">
-          Start your 14-day free trial. No credit card needed.
+          Start your 7day free trial. No credit card needed.
         </p>
-        
+
+        <div className="mt-5 grid grid-cols-2 rounded-[8px] bg-[#333333] p-1">
+          <button
+            type="button"
+            onClick={() => handleSignupTypeChange("individual")}
+            className={`min-h-[44px] rounded-[6px] px-3 text-sm font-semibold transition-colors md:text-base ${
+              signupType === "individual"
+                ? "bg-primary text-[#333333]"
+                : "text-[#D7D7D7] hover:text-white"
+            }`}
+          >
+            Sign up as Individual
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSignupTypeChange("organization")}
+            className={`min-h-[44px] rounded-[6px] px-3 text-sm font-semibold transition-colors md:text-base ${
+              signupType === "organization"
+                ? "bg-primary text-[#333333]"
+                : "text-[#D7D7D7] hover:text-white"
+            }`}
+          >
+            Join an Organization
+          </button>
+        </div>
 
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4 pt-5 lg:pt-6"
           >
+            {signupType === "organization" ? (
+              <FormField
+                control={form.control}
+                name="orgCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base font-semibold text-white leading-[120%]">
+                      Organization Code
+                    </FormLabel>
+
+                    <FormControl>
+                      <Input
+                        className="h-[48px] !bg-[#333333] !rounded-[8px] text-base font-medium text-white py-3 px-4 border-none placeholder:text-[#787878]"
+                        placeholder="Enter organization code"
+                        {...field}
+                      />
+                    </FormControl>
+
+                    <FormMessage  className="text-red-500"/>
+                  </FormItem>
+                )}
+              />
+            ) : null}
+
             <FormField
               control={form.control}
               name="name"
@@ -489,7 +577,13 @@ const SignupForm = () => {
 
             <div className="pt-1 md:pt-2">
               <Button disabled={isPending} className="h-[48px] w-full rounded-[8px] font-medium text-[#333333]" type="submit">
-                {isPending ? "Creating..." : "Create Account"}
+                {isPending
+                  ? signupType === "organization"
+                    ? "Joining..."
+                    : "Creating..."
+                  : signupType === "organization"
+                    ? "Join Organization"
+                    : "Create Account"}
               </Button>
             </div>
 

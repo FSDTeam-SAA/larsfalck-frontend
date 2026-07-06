@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Home, LogOut, Search, User, X } from "lucide-react";
+import { Building2, Home, LogOut, Search, User, X } from "lucide-react";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -107,6 +107,8 @@ export function Navbar() {
   const isHomePage = pathname === "/";
   const isAboutPage = pathname === "/about-us";
   const isPremiumPage = pathname.startsWith("/subscription");
+  const isOrganizationOwner = profile?.orgRole === "owner";
+  console.log(isOrganizationOwner)
 
   return (
     <>
@@ -281,6 +283,14 @@ export function Navbar() {
                       Profile
                     </Link>
                   </DropdownMenuItem>
+                  {isOrganizationOwner ? (
+                    <DropdownMenuItem asChild className="focus:bg-black">
+                      <Link href="/organization">
+                        <Building2 />
+                        Organization
+                      </Link>
+                    </DropdownMenuItem>
+                  ) : null}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onSelect={() => setIsLogoutOpen(true)}
