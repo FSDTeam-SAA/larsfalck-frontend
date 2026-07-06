@@ -10,6 +10,7 @@ export type UserProfile = {
   profileImage?: string | null;
   hasActiveSubscription?: boolean;
   trialEndsAt?: string | null;
+  orgRole?: "owner" | "worker" | null;
 };
 
 type UserProfileResponse = {

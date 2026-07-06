@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import type { BillingHistoryApiResponse } from "./billing-history-data-type";
 import QueryStateCard from "./query-state-card";
 
-const formatDate = (value?: string) => {
+const formatDate = (value?: string | null) => {
   if (!value) return "N/A";
 
   return new Intl.DateTimeFormat("en-US", {
@@ -63,6 +63,7 @@ const BillingHistory = () => {
   });
 
   const subscription = data?.data?.subscription;
+  const hasBillingHistory = Boolean(subscription?.planId);
 
   return (
     <section>
@@ -83,7 +84,7 @@ const BillingHistory = () => {
           icon={AlertCircle}
           tone="error"
         />
-      ) : !subscription ? (
+      ) : !hasBillingHistory ? (
         <QueryStateCard
           title="No billing history yet"
           description="Once you start a paid plan, your billing details will show up here."
@@ -94,7 +95,7 @@ const BillingHistory = () => {
           <div className="flex items-center justify-between gap-3 px-4 py-4 transition-colors hover:bg-[#1E1E1E] sm:min-h-[58px] sm:items-center">
             <div>
               <p className="text-xs md:text-sm font-normal leading-[120%] text-white ">
-                {subscription.planId?.name || "N/A"}
+              {subscription?.planId?.name || "N/A"}
               </p>
               {/* <p className="pt-1 text-[10px] font-normal leading-[120%] text-[#8A8A8A] md:text-[12px]">
                 {formatDate(subscription.startDate)}
@@ -103,8 +104,8 @@ const BillingHistory = () => {
 
             <p className="text-xs md:text-sm font-medium leading-[120%] text-white">
               {formatPrice(
-                subscription.planId?.price,
-                subscription.planId?.billingCycle,
+                subscription?.planId?.price,
+                subscription?.planId?.billingCycle,
               )}
             </p>
 
@@ -113,7 +114,7 @@ const BillingHistory = () => {
             </span>
 
              <p className="pt-1 text-[10px] font-normal leading-[120%] text-[#8A8A8A] md:text-[12px]">
-                {formatDate(subscription.startDate)}
+                {formatDate(subscription?.startDate)}
               </p>
 
             {/* <button

@@ -8,9 +8,9 @@ export interface SubscriptionPlan {
 
 export interface SubscriptionDetails {
   _id: string;
-  planId: SubscriptionPlan;
-  startDate: string;
-  endDate: string;
+  planId: SubscriptionPlan | null;
+  startDate: string | null;
+  endDate: string | null;
   stripeCustomerId: string;
   stripeSubscriptionId: string;
   status: string;
