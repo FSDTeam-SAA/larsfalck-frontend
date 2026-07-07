@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Building2, Copy, Trash2, Users } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -8,6 +8,14 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import OrganizationSkeleton from "./organization-skeleton";
 
 type OrgPlan = {
@@ -136,6 +144,7 @@ function StateCard({
 const OrganizationContainer = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [workerToDelete, setWorkerToDelete] = useState<Worker | null>(null);
   const { data: session, status } = useSession();
   const token = (session?.user as { accessToken?: string } | undefined)
     ?.accessToken;
@@ -156,6 +165,7 @@ const OrganizationContainer = () => {
     mutationFn: (workerId: string) => deleteWorker(token as string, workerId),
     onSuccess: (result) => {
       toast.success(result.message || "Worker deleted");
+      setWorkerToDelete(null);
       queryClient.invalidateQueries({ queryKey: ["organization-my", token] });
     },
     onError: (deleteError: Error) => {
@@ -312,15 +322,10 @@ const OrganizationContainer = () => {
                             type="button"
                             variant="destructive"
                             disabled={deleteWorkerMutation.isPending}
-                            onClick={() => {
-                              if (confirm("Delete this worker?")) {
-                                deleteWorkerMutation.mutate(worker._id);
-                              }
-                            }}
+                            onClick={() => setWorkerToDelete(worker)}
                             className="h-9 rounded-[8px] px-3"
                           >
-                            <Trash2 className="size-4" />
-                            Delete
+                            <Trash2 className="size-4 text-red-500" />
                           </Button>
                         </td>
                       </tr>
@@ -332,6 +337,47 @@ const OrganizationContainer = () => {
           </div>
         </>
       ) : null}
+      <Dialog
+        open={Boolean(workerToDelete)}
+        onOpenChange={(open) => {
+          if (!open && !deleteWorkerMutation.isPending) {
+            setWorkerToDelete(null);
+          }
+        }}
+      >
+        <DialogContent className="border border-white/10 bg-[#242424] text-white sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Delete worker?</DialogTitle>
+            <DialogDescription className="text-[#A8A8A8]">
+              This will permanently delete {workerToDelete?.name || "this worker"}.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="-mx-4 -mb-4 border-white/10 bg-[#1E1E1E]">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setWorkerToDelete(null)}
+              disabled={deleteWorkerMutation.isPending}
+              className="text-white hover:bg-white/10 hover:text-white"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (workerToDelete) {
+                  deleteWorkerMutation.mutate(workerToDelete._id);
+                }
+              }}
+              disabled={!workerToDelete || deleteWorkerMutation.isPending}
+              className="bg-red-500 text-white hover:bg-red-600"
+            >
+              {deleteWorkerMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
