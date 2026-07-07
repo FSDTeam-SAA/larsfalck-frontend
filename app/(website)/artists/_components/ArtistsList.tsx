@@ -10,6 +10,7 @@ type Artist = {
   name: string;
   description: string;
   image: string;
+  imageKey?: string;
   status: string;
   songCount: number;
   albumCount: number;
@@ -34,6 +35,18 @@ async function getArtists(): Promise<ArtistsResponse> {
   }
 
   return result;
+}
+
+function getArtistImage(image: string, imageKey?: string) {
+  if (
+    imageKey &&
+    image.includes("cdn.beatboksmusic.com") &&
+    image.toLowerCase().endsWith(".png")
+  ) {
+    return `https://larsfalck-media.s3.ap-south-1.amazonaws.com/${imageKey}`;
+  }
+
+  return image;
 }
 
 export default function ArtistsList() {
@@ -72,7 +85,7 @@ export default function ArtistsList() {
           key={artist._id}
           id={artist._id}
           name={artist.name}
-          image={artist.image}
+          image={getArtistImage(artist.image, artist.imageKey)}
           albums={artist.albumCount}
           songs={artist.songCount}
         />
