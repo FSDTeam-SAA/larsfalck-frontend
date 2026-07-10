@@ -8,9 +8,15 @@ export default function ArtistDetailsSkeleton() {
           <Skeleton className="absolute inset-0 h-full w-full rounded-none bg-white/10" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-[#121212]/50 to-transparent" />
 
-          <div className="absolute bottom-6 left-4 right-4 space-y-3 md:left-8 md:right-8">
-            <Skeleton className="h-9 w-56 max-w-full bg-white/10 md:h-14 md:w-96" />
-            <Skeleton className="h-4 w-48 max-w-full bg-white/10" />
+          <div className="absolute bottom-6 left-4 right-4 md:left-8 md:right-8">
+            <div className="flex items-end gap-4 md:gap-6">
+              <Skeleton className="size-24 shrink-0 rounded-full bg-white/10 md:size-36" />
+              <div className="min-w-0 flex-1 space-y-3 pb-1">
+                <Skeleton className="h-9 w-56 max-w-full bg-white/10 md:h-14 md:w-96" />
+                <Skeleton className="h-4 w-48 max-w-full bg-white/10" />
+              </div>
+            </div>
+
             <Skeleton className="h-3 w-full max-w-2xl bg-white/10" />
             <Skeleton className="h-3 w-3/4 max-w-xl bg-white/10" />
           </div>

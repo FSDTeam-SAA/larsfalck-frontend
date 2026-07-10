@@ -12,7 +12,8 @@ function pluralize(count: number, singular: string, plural = `${singular}s`) {
 }
 
 export default function ArtistHero({ artist, stats }: ArtistHeroProps) {
-  const coverImage = artist.image || "/banner.png";
+  const coverImage = artist.coverImage || artist.image || "/banner.png";
+  const artistImage = artist.image || artist.coverImage || "/artis.png";
   const metadata = [
     pluralize(stats.totalAlbums, "Album"),
     pluralize(stats.totalSongs, "Song"),
@@ -29,19 +30,34 @@ export default function ArtistHero({ artist, stats }: ArtistHeroProps) {
           alt={artist.name}
           fill
           priority
-          className="object-cover"
+          sizes="100vw"
+          className="object-cover object-center"
         />
 
         <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-[#121212]/45 to-transparent" />
 
         <div className="absolute bottom-6 left-4 right-4 md:left-8 md:right-8">
-          <h1 className="text-3xl font-bold text-white md:text-5xl">
-            {artist.name}
-          </h1>
+          <div className="flex items-end gap-4 md:gap-6">
+            <div className="relative size-24 shrink-0 overflow-hidden rounded-full border-4 border-[#121212] bg-white/10 shadow-xl md:size-36">
+              <Image
+                src={artistImage}
+                alt={artist.name}
+                fill
+                sizes="(min-width: 768px) 144px, 96px"
+                className="object-cover"
+              />
+            </div>
 
-          <p className="mt-2 text-sm text-neutral-300 md:text-base">
-            {metadata}
-          </p>
+            <div className="min-w-0 pb-1">
+              <h1 className="truncate text-3xl font-bold text-white md:text-5xl">
+                {artist.name}
+              </h1>
+
+              <p className="mt-2 text-sm text-neutral-300 md:text-base">
+                {metadata}
+              </p>
+            </div>
+          </div>
 
           {artist.description && (
             <p className="mt-2 max-w-2xl text-xs leading-5 text-neutral-300 md:text-sm">
