@@ -56,15 +56,39 @@ const formatPrice = (price: number) =>
     currency: "USD",
   }).format(price);
 
-const PlanCard = ({ plan }: { plan: SubscriptionPlanCardData }) => {
+const PlanCard = ({
+  plan,
+  isActive = false,
+  isOrganizationUpgrade = false,
+  currentSeats,
+}: {
+  plan: SubscriptionPlanCardData;
+  isActive?: boolean;
+  isOrganizationUpgrade?: boolean;
+  currentSeats?: number;
+}) => {
   const styles = toneStyles[plan.tone];
   const { data: session, status } = useSession();
   const token = (session?.user as { accessToken?: string })?.accessToken;
   const [isLoading, setIsLoading] = useState(false);
   const [isOrgModalOpen, setIsOrgModalOpen] = useState(false);
   const [businessName, setBusinessName] = useState("");
-  const [seats, setSeats] = useState("1");
+  const [seats, setSeats] = useState(isOrganizationUpgrade ? "0" : "1");
   const isOrganizationPlan = plan.planType === "organization";
+  const isButtonDisabled =
+    (isActive && !isOrganizationUpgrade) || isLoading || status === "loading";
+  const extraSeatCount = Number(seats || 0);
+  const validExtraSeats = Number.isFinite(extraSeatCount)
+    ? Math.max(0, extraSeatCount)
+    : 0;
+  const totalSeats = (currentSeats ?? 0) + validExtraSeats;
+  const buttonLabel = isOrganizationUpgrade
+    ? isActive
+      ? "Upgrade Organization"
+      : "Switch Organization Plan"
+    : isActive
+      ? "Current Plan"
+      : plan?.buttonLabel;
 
   const createCheckout = async (endpoint: string, payload: object) => {
     if (!plan?.id) return;
@@ -124,6 +148,28 @@ const PlanCard = ({ plan }: { plan: SubscriptionPlanCardData }) => {
     event.preventDefault();
 
     const seatCount = Number(seats);
+
+    if (isOrganizationUpgrade) {
+      if (!Number.isInteger(seatCount) || seatCount < 0) {
+        toast.error("Add seats must be 0 or more");
+        return;
+      }
+
+      if (isActive && seatCount === 0) {
+        toast.error("Add at least 1 seat to upgrade this plan");
+        return;
+      }
+
+      const payload: { planId: string; seats?: number } = { planId: plan.id };
+
+      if (seatCount > 0) {
+        payload.seats = (currentSeats ?? 0) + seatCount;
+      }
+
+      await createCheckout("/organization/upgrade-checkout", payload);
+      return;
+    }
+
     const trimmedBusinessName = businessName.trim();
 
     if (!trimmedBusinessName) {
@@ -146,9 +192,19 @@ const PlanCard = ({ plan }: { plan: SubscriptionPlanCardData }) => {
   return (
     <>
       <article
-        className={`flex min-h-[424px] flex-col rounded-[16px] border p-5 md:p-6  transition-transform duration-200 hover:-translate-y-0.5 ${styles.card}`}
+        className={`relative flex min-h-[424px] flex-col rounded-[16px] border p-5 md:p-6 transition-transform duration-200 hover:-translate-y-0.5 ${
+          isActive
+            ? "border-primary bg-[#1ED76014] shadow-[0_0_0_2px_rgba(30,215,96,0.35)]"
+            : styles.card
+        }`}
       >
         <div>
+          {isActive && (
+            <span className="mb-3 inline-flex w-fit items-center gap-1 rounded-full border border-primary bg-[#073F18] px-3 py-1 text-xs font-medium leading-none text-primary">
+              <CircleCheck className="size-3" />
+              Active Plan
+            </span>
+          )}
           <h3
             className={`text-2xl md:text-3xl lg:text-4xl font-semibold leading-[120%] ${styles.title}`}
           >
@@ -178,10 +234,14 @@ const PlanCard = ({ plan }: { plan: SubscriptionPlanCardData }) => {
         <Button
           type="button"
           onClick={handleCheckout}
-          disabled={isLoading || status === "loading"}
-          className={`mt-auto h-12 w-full rounded-full text-sm md:text-base font-medium leading-[120%] shadow-none ${styles.button}`}
+          disabled={isButtonDisabled}
+          className={`mt-auto h-12 w-full rounded-full text-sm md:text-base font-medium leading-[120%] shadow-none ${
+            isActive && !isOrganizationUpgrade
+              ? "bg-primary/20 text-primary hover:bg-primary/20"
+              : styles.button
+          }`}
         >
-          {isLoading ? "Processing..." : plan?.buttonLabel}
+          {isLoading ? "Processing..." : buttonLabel}
         </Button>
       </article>
 
@@ -191,41 +251,72 @@ const PlanCard = ({ plan }: { plan: SubscriptionPlanCardData }) => {
           overlayClassName="bg-black/50"
         >
           <DialogHeader>
-            <DialogTitle className="text-2xl font-semibold">Organization checkout</DialogTitle>
+            <DialogTitle className="text-2xl font-semibold">
+              {isOrganizationUpgrade
+                ? isActive
+                  ? "Upgrade organization"
+                  : "Switch organization plan"
+                : "Organization checkout"}
+            </DialogTitle>
             <DialogDescription className="text-[#A8A8A8] text-base">
-              Add your business name and seat count.
+              {isOrganizationUpgrade
+                ? "Add seats, or switch plans without changing seats."
+                : "Add your business name and seat count."}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleOrganizationCheckout} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor={`business-name-${plan.id}`} className="text-white text-xl">
-                Business Name
-              </Label>
-              <Input
-                id={`business-name-${plan.id}`}
-                value={businessName}
-                onChange={(event) => setBusinessName(event.target.value)}
-                className="h-12 border-none !bg-[#333333] text-white placeholder:text-[#787878]"
-                placeholder="Enter your business name"
-              />
-            </div>
+            {!isOrganizationUpgrade && (
+              <div className="space-y-2">
+                <Label
+                  htmlFor={`business-name-${plan.id}`}
+                  className="text-white text-xl"
+                >
+                  Business Name
+                </Label>
+                <Input
+                  id={`business-name-${plan.id}`}
+                  value={businessName}
+                  onChange={(event) => setBusinessName(event.target.value)}
+                  className="h-12 border-none !bg-[#333333] text-white placeholder:text-[#787878]"
+                  placeholder="Enter your business name"
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor={`seats-${plan.id}`} className="text-white text-xl">
-                Seats
+                {isOrganizationUpgrade ? "Add Seats" : "Seats"}
               </Label>
               <Input
                 id={`seats-${plan.id}`}
                 type="number"
-                min={1}
+                min={isOrganizationUpgrade ? 0 : 1}
                 step={1}
                 value={seats}
                 onChange={(event) => setSeats(event.target.value)}
                 className="h-12 border-none !bg-[#333333] text-white [appearance:textfield] placeholder:text-[#787878] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                placeholder="10"
+                placeholder={isOrganizationUpgrade ? "0" : "10"}
               />
             </div>
+
+            {isOrganizationUpgrade && (
+              <div className="rounded-[8px] bg-[#333333] px-3 py-2 text-sm text-[#D7D7D7]">
+                Current seats:{" "}
+                <span className="font-semibold text-white">
+                  {currentSeats ?? 0}
+                </span>
+                {validExtraSeats > 0 && (
+                  <>
+                    {" "}
+                    + {validExtraSeats} ={" "}
+                    <span className="font-semibold text-primary">
+                      {totalSeats}
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
 
             <DialogFooter className=" border-none">
               <Button
