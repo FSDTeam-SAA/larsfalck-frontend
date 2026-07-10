@@ -22,7 +22,9 @@ const formatPrice = (price?: number) =>
       }).format(price)
     : "N/A";
 
-async function getCurrentSubscription(
+export const currentSubscriptionQueryKey = ["subscription-billing-history"];
+
+export async function getCurrentSubscription(
   token: string,
 ): Promise<BillingHistoryApiResponse> {
   const response = await fetch(
@@ -42,7 +44,7 @@ const CurrentSubscription = () => {
   const { data: session, status } = useSession();
   const token = (session?.user as { accessToken?: string })?.accessToken;
   const { data, isLoading, isError } = useQuery<BillingHistoryApiResponse>({
-    queryKey: ["subscription-billing-history"],
+    queryKey: currentSubscriptionQueryKey,
     queryFn: () => getCurrentSubscription(token as string),
     enabled: status === "authenticated" && !!token,
     staleTime: 1000 * 60 * 5,
