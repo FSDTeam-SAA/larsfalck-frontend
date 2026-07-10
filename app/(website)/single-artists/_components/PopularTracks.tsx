@@ -40,7 +40,7 @@ export default function PopularTracks({ artist, songs }: PopularTracksProps) {
     playQueue,
     togglePlay,
   } = usePlayer();
-  const artistImage = artist.image || "/albam.png";
+  const artistImage = artist.image || artist.coverImage || "/albam.png";
   const playerTracks = useMemo<PlayerTrack[]>(
     () =>
       songs.map((song) => ({

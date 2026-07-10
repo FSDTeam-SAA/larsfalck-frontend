@@ -11,6 +11,9 @@ export type ArtistSummary = {
   _id: string;
   name: string;
   image?: string;
+  imageKey?: string;
+  coverImage?: string;
+  coverImageKey?: string;
   description?: string;
 };
 
@@ -76,6 +79,19 @@ const emptyStats: ArtistStats = {
   totalPlays: 0,
 };
 
+const mediaBaseUrl = "https://larsfalck-media.s3.ap-south-1.amazonaws.com";
+
+function getArtistMediaUrl(url?: string, key?: string) {
+  const cleanUrl = url?.trim();
+  const cleanKey = key?.trim().replace(/^\/+/, "");
+
+  if (cleanKey && (!cleanUrl || cleanUrl.includes("cdn.beatboksmusic.com"))) {
+    return `${mediaBaseUrl}/${cleanKey}`;
+  }
+
+  return cleanUrl;
+}
+
 async function getArtistDetails(artistId: string): Promise<ArtistDetailsData> {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BACKEND_URL}/artist/${encodeURIComponent(
@@ -84,14 +100,19 @@ async function getArtistDetails(artistId: string): Promise<ArtistDetailsData> {
   );
 
   const result = (await response.json()) as ArtistDetailsResponse;
-  
+
   if (!response.ok || !result.success || !result.data?.artist) {
     throw new Error(result.message || "Could not load artist profile");
   }
-  
+
+  const artist = result.data.artist;
 
   return {
-    artist: result.data.artist,
+    artist: {
+      ...artist,
+      image: getArtistMediaUrl(artist.image, artist.imageKey),
+      coverImage: getArtistMediaUrl(artist.coverImage, artist.coverImageKey),
+    },
     stats: {
       ...emptyStats,
       ...result.data.stats,
@@ -113,8 +134,6 @@ export default function ArtistDetailsClient({
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
-
- 
 
   if (isPending) {
     return <ArtistDetailsSkeleton />;
