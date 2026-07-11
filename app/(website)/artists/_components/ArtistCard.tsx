@@ -1,10 +1,12 @@
-import Image from "next/image";
 import Link from "next/link";
+
+import FallbackImage from "@/components/common/FallbackImage";
 
 type ArtistCardProps = {
   id: string;
   name: string;
   image: string;
+  fallbackImages?: string[];
   albums: number;
   songs: number;
 };
@@ -13,14 +15,17 @@ export default function ArtistCard({
   id,
   name,
   image,
+  fallbackImages,
   albums,
   songs,
 }: ArtistCardProps) {
   return (
     <Link href={`/single-artists/${id}`} className="group block min-w-0">
       <div className="relative aspect-[4/4.2] overflow-hidden rounded-xl bg-white/5">
-        <Image
+        <FallbackImage
           src={image || "/artis.png"}
+          fallbackSrc={fallbackImages}
+          placeholderSrc="/artis.png"
           alt={name}
           fill
           sizes="(min-width: 1280px) 16vw, (min-width: 768px) 25vw, 50vw"

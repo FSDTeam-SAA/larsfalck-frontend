@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import Image from "next/image";
 import { Clock3,  Pause, Play, Shuffle } from "lucide-react";
 
+import FallbackImage from "@/components/common/FallbackImage";
 import {
   type PlayerTrack,
   usePlayer,
@@ -32,6 +32,14 @@ function getArtistNames(song: ArtistSong, fallbackArtist: ArtistSummary) {
   );
 }
 
+const mediaBaseUrl = "https://larsfalck-media.s3.ap-south-1.amazonaws.com";
+
+function getMediaKeyUrl(key?: string) {
+  const cleanKey = key?.trim().replace(/^\/+/, "");
+
+  return cleanKey ? `${mediaBaseUrl}/${cleanKey}` : undefined;
+}
+
 export default function PopularTracks({ artist, songs }: PopularTracksProps) {
   const {
     currentTrack,
@@ -41,6 +49,12 @@ export default function PopularTracks({ artist, songs }: PopularTracksProps) {
     togglePlay,
   } = usePlayer();
   const artistImage = artist.image || artist.coverImage || "/albam.png";
+  const artistImageFallbacks = [
+    getMediaKeyUrl(artist.imageKey),
+    artist.coverImage,
+    getMediaKeyUrl(artist.coverImageKey),
+    "/albam.png",
+  ].filter((source): source is string => Boolean(source));
   const playerTracks = useMemo<PlayerTrack[]>(
     () =>
       songs.map((song) => ({
@@ -108,8 +122,10 @@ export default function PopularTracks({ artist, songs }: PopularTracksProps) {
         </button>
 
         <div className="relative h-10 w-10 overflow-hidden rounded">
-          <Image
+          <FallbackImage
             src={artistImage}
+            fallbackSrc={artistImageFallbacks}
+            placeholderSrc="/albam.png"
             alt=""
             fill
             sizes="40px"
@@ -176,8 +192,10 @@ export default function PopularTracks({ artist, songs }: PopularTracksProps) {
                 </button>
 
                 <div className="relative size-10 overflow-hidden rounded md:size-12">
-                  <Image
+                  <FallbackImage
                     src={song.coverImage || artistImage}
+                    fallbackSrc={artistImageFallbacks}
+                    placeholderSrc="/albam.png"
                     alt=""
                     fill
                     sizes="48px"
