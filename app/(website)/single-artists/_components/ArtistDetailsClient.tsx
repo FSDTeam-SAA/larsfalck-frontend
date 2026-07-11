@@ -85,11 +85,9 @@ function getArtistMediaUrl(url?: string, key?: string) {
   const cleanUrl = url?.trim();
   const cleanKey = key?.trim().replace(/^\/+/, "");
 
-  if (cleanKey && (!cleanUrl || cleanUrl.includes("cdn.beatboksmusic.com"))) {
-    return `${mediaBaseUrl}/${cleanKey}`;
-  }
+  if (cleanUrl) return cleanUrl;
 
-  return cleanUrl;
+  return cleanKey ? `${mediaBaseUrl}/${cleanKey}` : undefined;
 }
 
 async function getArtistDetails(artistId: string): Promise<ArtistDetailsData> {

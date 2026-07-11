@@ -9,8 +9,10 @@ type Artist = {
   _id: string;
   name: string;
   description: string;
-  image: string;
+  image?: string;
   imageKey?: string;
+  coverImage?: string;
+  coverImageKey?: string;
   status: string;
   songCount: number;
   albumCount: number;
@@ -37,16 +39,35 @@ async function getArtists(): Promise<ArtistsResponse> {
   return result;
 }
 
-function getArtistImage(image: string, imageKey?: string) {
-  if (
-    imageKey &&
-    image.includes("cdn.beatboksmusic.com") &&
-    image.toLowerCase().endsWith(".png")
-  ) {
-    return `https://larsfalck-media.s3.ap-south-1.amazonaws.com/${imageKey}`;
-  }
+const mediaBaseUrl = "https://larsfalck-media.s3.ap-south-1.amazonaws.com";
 
-  return image;
+function getDirectMediaUrl(url?: string) {
+  return url?.trim() || undefined;
+}
+
+function getMediaKeyUrl(key?: string) {
+  const cleanKey = key?.trim().replace(/^\/+/, "");
+
+  return cleanKey ? `${mediaBaseUrl}/${cleanKey}` : undefined;
+}
+
+function getArtistImageFallbacks(artist: Artist) {
+  return [
+    getMediaKeyUrl(artist.imageKey),
+    getDirectMediaUrl(artist.coverImage),
+    getMediaKeyUrl(artist.coverImageKey),
+    "/artis.png",
+  ].filter((source): source is string => Boolean(source));
+}
+
+function getArtistImage(artist: Artist) {
+  return (
+    getDirectMediaUrl(artist.image) ||
+    getMediaKeyUrl(artist.imageKey) ||
+    getDirectMediaUrl(artist.coverImage) ||
+    getMediaKeyUrl(artist.coverImageKey) ||
+    "/artis.png"
+  );
 }
 
 export default function ArtistsList() {
@@ -85,7 +106,8 @@ export default function ArtistsList() {
           key={artist._id}
           id={artist._id}
           name={artist.name}
-          image={getArtistImage(artist.image, artist.imageKey)}
+          image={getArtistImage(artist)}
+          fallbackImages={getArtistImageFallbacks(artist)}
           albums={artist.albumCount}
           songs={artist.songCount}
         />
