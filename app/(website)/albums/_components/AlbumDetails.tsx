@@ -43,7 +43,7 @@ type AlbumSong = {
   audioFile: string;
   coverImage: string;
   duration: number;
-  playCount: number;
+  playCount?: number | null;
   status: string;
 };
 
@@ -286,7 +286,7 @@ export function AlbumDetails({ details }: AlbumDetailsProps) {
                     </div>
 
                     <span className="hidden text-right text-xs text-[#C7C7C7] sm:block">
-                      {song.playCount.toLocaleString()}
+                      {(song.playCount ?? 0).toLocaleString()}
                     </span>
 
                     <FavoriteSongButton songId={song._id} songName={song.name} />

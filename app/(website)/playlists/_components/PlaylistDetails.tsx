@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { type DragEvent, useDeferredValue, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,6 +8,7 @@ import {
   CircleCheck,
   CircleMinus,
   Clock3,
+  GripVertical,
   MoreHorizontal,
   Pause,
   Play,
@@ -45,7 +46,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useUserProfile } from "@/lib/use-user-profile";
-import { cn } from "@/lib/utils";
+import { cn, reorderIds } from "@/lib/utils";
 
 import PlaylistDetailsSkeleton from "./PlaylistDetailsSkeleton";
 import {
@@ -59,7 +60,9 @@ import {
   getSongArtists,
   getSongsPage,
   removeSongsFromPlaylist,
+  reorderPlaylistSongs,
   type Playlist,
+  type PlaylistDetailsData,
   type PlaylistOwner,
   type Song,
 } from "./playlist-api";
@@ -114,8 +117,43 @@ function updatePlaylistSongIds(
   });
 }
 
+function updatePlaylistSongOrder(
+  playlists: Playlist[] | undefined,
+  playlistId: string,
+  songIds: string[],
+) {
+  return playlists?.map((playlist) =>
+    playlist._id === playlistId
+      ? {
+          ...playlist,
+          songs: songIds,
+        }
+      : playlist,
+  );
+}
+
 function isSong(value: string | Song): value is Song {
   return typeof value !== "string";
+}
+
+function getSongValueId(value: string | Song) {
+  return typeof value === "string" ? value : value._id;
+}
+
+function updatePlaylistDetailsSongOrder(
+  playlist: PlaylistDetailsData | undefined,
+  songIds: string[],
+) {
+  if (!playlist) return playlist;
+
+  const songsById = new Map(
+    playlist.songs.map((song) => [getSongValueId(song), song]),
+  );
+
+  return {
+    ...playlist,
+    songs: songIds.map((songId) => songsById.get(songId) ?? songId),
+  };
 }
 
 function getOwnerId(owner: PlaylistOwner | undefined) {
@@ -134,6 +172,12 @@ export function PlaylistDetails({
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query.trim());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [draggedPlaylistSongId, setDraggedPlaylistSongId] = useState<
+    string | null
+  >(null);
+  const [dragOverPlaylistSongId, setDragOverPlaylistSongId] = useState<
+    string | null
+  >(null);
   const {
     profile,
     status,
@@ -327,6 +371,8 @@ export function PlaylistDetails({
       queryClient.setQueryData(playlistsQueryKey, context?.previousPlaylists);
     },
     onSuccess: (updatedPlaylist) => {
+      toast.success("Playlist order updated");
+
       if (!updatedPlaylist) return;
 
       queryClient.setQueryData<Playlist[]>(playlistsQueryKey, (current) =>
@@ -340,6 +386,74 @@ export function PlaylistDetails({
       void queryClient.invalidateQueries({ queryKey: playlistQueryKey });
     },
   });
+
+  const reorderMutation = useMutation({
+    mutationFn: ({ songIds }: { songIds: string[] }) => {
+      if (!token) {
+        throw new Error("Please sign in to update this playlist.");
+      }
+      if (trialExpired) {
+        throw new Error(
+          "Your free trial has ended. Please buy a premium plan.",
+        );
+      }
+
+      return reorderPlaylistSongs(token, playlistId, songIds);
+    },
+    onMutate: async ({ songIds }) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: playlistsQueryKey }),
+        queryClient.cancelQueries({ queryKey: playlistQueryKey }),
+      ]);
+
+      const previousPlaylists =
+        queryClient.getQueryData<Playlist[]>(playlistsQueryKey);
+      const previousPlaylistDetails =
+        queryClient.getQueryData<PlaylistDetailsData>(playlistQueryKey);
+
+      queryClient.setQueryData<Playlist[]>(playlistsQueryKey, (current) =>
+        updatePlaylistSongOrder(current, playlistId, songIds),
+      );
+      queryClient.setQueryData<PlaylistDetailsData>(
+        playlistQueryKey,
+        (current) => updatePlaylistDetailsSongOrder(current, songIds),
+      );
+
+      return { previousPlaylists, previousPlaylistDetails };
+    },
+    onError: (error, _variables, context) => {
+      queryClient.setQueryData(playlistsQueryKey, context?.previousPlaylists);
+      queryClient.setQueryData(
+        playlistQueryKey,
+        context?.previousPlaylistDetails,
+      );
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not reorder playlist songs",
+      );
+    },
+    onSuccess: (updatedPlaylist) => {
+      if (!updatedPlaylist) return;
+
+      queryClient.setQueryData<Playlist[]>(playlistsQueryKey, (current) =>
+        current?.map((item) =>
+          item._id === updatedPlaylist._id ? updatedPlaylist : item,
+        ),
+      );
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: playlistsQueryKey });
+      void queryClient.invalidateQueries({ queryKey: playlistQueryKey });
+    },
+  });
+  const canReorderPlaylist =
+    canEditPlaylist &&
+    Boolean(token) &&
+    !trialExpired &&
+    playlistSongIds.length > 1 &&
+    !songMutation.isPending &&
+    !reorderMutation.isPending;
 
   const deletePlaylistMutation = useMutation({
     mutationFn: () => {
@@ -397,6 +511,54 @@ export function PlaylistDetails({
       songId,
       action: isAdded ? "remove" : "add",
     });
+  }
+
+  function handlePlaylistSongDragStart(
+    event: DragEvent<HTMLButtonElement>,
+    songId: string,
+  ) {
+    if (!canReorderPlaylist) {
+      event.preventDefault();
+      return;
+    }
+
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", songId);
+    setDraggedPlaylistSongId(songId);
+  }
+
+  function handlePlaylistSongDragOver(event: DragEvent<HTMLDivElement>) {
+    if (!canReorderPlaylist) return;
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }
+
+  function handlePlaylistSongDrop(
+    event: DragEvent<HTMLDivElement>,
+    targetSongId: string,
+  ) {
+    event.preventDefault();
+
+    const sourceSongId =
+      draggedPlaylistSongId || event.dataTransfer.getData("text/plain");
+
+    setDraggedPlaylistSongId(null);
+    setDragOverPlaylistSongId(null);
+
+    if (!canReorderPlaylist || !sourceSongId || sourceSongId === targetSongId) {
+      return;
+    }
+
+    const nextSongIds = reorderIds(
+      playlistSongIds,
+      sourceSongId,
+      targetSongId,
+    );
+
+    if (nextSongIds === playlistSongIds) return;
+
+    reorderMutation.mutate({ songIds: nextSongIds });
   }
 
   if (
@@ -543,7 +705,8 @@ export function PlaylistDetails({
         </div>
 
         <div className="mt-4">
-          <div className="hidden grid-cols-[32px_minmax(180px,1.4fr)_minmax(120px,1fr)_minmax(110px,0.8fr)_32px_24px_44px] items-center gap-3 border-b border-white/5 px-1 pb-3 text-base text-[#C7C7C7] md:grid">
+          <div className="hidden grid-cols-[18px_32px_minmax(180px,1.4fr)_minmax(120px,1fr)_minmax(110px,0.8fr)_32px_24px_44px] items-center gap-3 border-b border-white/5 px-1 pb-3 text-base text-[#C7C7C7] md:grid">
+            <span />
             <span>#</span>
             <span>Title</span>
             <span>Album</span>
@@ -563,8 +726,41 @@ export function PlaylistDetails({
               return (
                 <div
                   key={song._id}
-                  className="group grid grid-cols-[24px_minmax(0,1fr)_32px_44px] items-center gap-2 rounded-md px-1 py-3 transition-colors hover:bg-white/5 md:grid-cols-[32px_minmax(180px,1.4fr)_minmax(120px,1fr)_minmax(110px,0.8fr)_32px_24px_44px] md:gap-3"
+                  onDragEnter={() => {
+                    if (canReorderPlaylist && draggedPlaylistSongId) {
+                      setDragOverPlaylistSongId(song._id);
+                    }
+                  }}
+                  onDragOver={handlePlaylistSongDragOver}
+                  onDrop={(event) => handlePlaylistSongDrop(event, song._id)}
+                  className={cn(
+                    "group grid grid-cols-[18px_24px_minmax(0,1fr)_32px_44px] items-center gap-2 rounded-md px-1 py-3 transition-colors hover:bg-white/5 md:grid-cols-[18px_32px_minmax(180px,1.4fr)_minmax(120px,1fr)_minmax(110px,0.8fr)_32px_24px_44px] md:gap-3",
+                    draggedPlaylistSongId === song._id && "opacity-50",
+                    dragOverPlaylistSongId === song._id &&
+                      draggedPlaylistSongId !== song._id &&
+                      "bg-white/10 ring-1 ring-[#00EF01]/40",
+                  )}
                 >
+                  <button
+                    type="button"
+                    draggable={canReorderPlaylist}
+                    disabled={!canReorderPlaylist}
+                    onDragStart={(event) =>
+                      handlePlaylistSongDragStart(event, song._id)
+                    }
+                    onDragEnd={() => {
+                      setDraggedPlaylistSongId(null);
+                      setDragOverPlaylistSongId(null);
+                    }}
+                    aria-label={`Drag ${song.name} to reorder`}
+                    className={cn(
+                      "inline-flex size-4 cursor-grab items-center justify-center justify-self-center text-[#7A7A7A] transition hover:text-white active:cursor-grabbing disabled:cursor-default disabled:opacity-35",
+                      !canEditPlaylist && "invisible",
+                    )}
+                  >
+                    <GripVertical className="size-4" />
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => handleSongPlayback(song._id)}
