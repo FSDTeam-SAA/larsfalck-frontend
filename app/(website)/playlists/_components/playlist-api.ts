@@ -121,8 +121,13 @@ function getAuthHeaders(token?: string) {
     : undefined;
 }
 
-function isPlaylist(data: CreatePlaylistData): data is Playlist {
-  return "_id" in data && typeof data._id === "string";
+function isPlaylist(data: unknown): data is Playlist {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "_id" in data &&
+    typeof (data as { _id?: unknown })._id === "string"
+  );
 }
 
 export async function getMyPlaylists(token: string): Promise<Playlist[]> {
@@ -323,6 +328,41 @@ export function removeSongsFromPlaylist(
   songIds: string[],
 ) {
   return updatePlaylistSongs(token, playlistId, "remove", songIds);
+}
+
+export async function reorderPlaylistSongs(
+  token: string,
+  playlistId: string,
+  songIds: string[],
+): Promise<Playlist | null> {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/playlist/${encodeURIComponent(
+      playlistId,
+    )}/reorder`,
+    {
+      method: "PUT",
+      headers: {
+        ...getAuthHeaders(token),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ songIds }),
+    },
+  );
+  const result = (await response
+    .json()
+    .catch(() => null)) as ApiResponse<PlaylistMutationData> | null;
+
+  if (!response.ok || result?.success === false) {
+    throw new Error(result?.message || "Could not reorder playlist songs");
+  }
+
+  if (!result?.data) return null;
+
+  if ("playlist" in result.data) {
+    return result.data.playlist ?? null;
+  }
+
+  return isPlaylist(result.data) ? result.data : null;
 }
 
 export function getSongArtists(song: Song) {
