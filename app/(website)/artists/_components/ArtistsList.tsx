@@ -1,9 +1,12 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
+
+import { Button } from "@/components/ui/button";
 
 import ArtistCard from "./ArtistCard";
 import ArtistsSkeleton from "./ArtistsSkeleton";
+import { ChevronDown } from "lucide-react";
 
 type Artist = {
   _id: string;
@@ -18,17 +21,28 @@ type Artist = {
   albumCount: number;
 };
 
+type PaginationInfo = {
+  currentPage: number;
+  totalPages: number;
+  totalData: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+};
+
 type ArtistsResponse = {
   success: boolean;
   message: string;
   data: {
     artists: Artist[];
+    paginationInfo?: PaginationInfo;
   };
 };
 
-async function getArtists(): Promise<ArtistsResponse> {
+const artistsPerPage = 12;
+
+async function getArtists(page: number): Promise<ArtistsResponse> {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/artist`,
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/artist?page=${page}&limit=${artistsPerPage}`,
   );
   const result = (await response.json()) as ArtistsResponse;
 
@@ -71,9 +85,22 @@ function getArtistImage(artist: Artist) {
 }
 
 export default function ArtistsList() {
-  const { data, isPending, isError } = useQuery({
+  const {
+    data,
+    isPending,
+    isError,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ["artists"],
-    queryFn: getArtists,
+    queryFn: ({ pageParam }) => getArtists(pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage.data.paginationInfo;
+
+      return pagination?.hasNextPage ? pagination.currentPage + 1 : undefined;
+    },
     staleTime: 1000 * 60 * 5,
   });
 
@@ -89,7 +116,7 @@ export default function ArtistsList() {
     );
   }
 
-  const artists = data.data.artists;
+  const artists = data.pages.flatMap((page) => page.data.artists);
 
   if (artists.length === 0) {
     return (
@@ -100,18 +127,33 @@ export default function ArtistsList() {
   }
 
   return (
-    <div className="grid grid-cols-3 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-      {artists.map((artist) => (
-        <ArtistCard
-          key={artist._id}
-          id={artist._id}
-          name={artist.name}
-          image={getArtistImage(artist)}
-          fallbackImages={getArtistImageFallbacks(artist)}
-          albums={artist.albumCount}
-          songs={artist.songCount}
-        />
-      ))}
+    <div>
+      <div className="grid grid-cols-3 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        {artists.map((artist) => (
+          <ArtistCard
+            key={artist._id}
+            id={artist._id}
+            name={artist.name}
+            image={getArtistImage(artist)}
+            fallbackImages={getArtistImageFallbacks(artist)}
+            albums={artist.albumCount}
+            songs={artist.songCount}
+          />
+        ))}
+      </div>
+
+      {hasNextPage && (
+        <div className="mt-8 flex justify-center">
+          <Button
+            disabled={isFetchingNextPage}
+            onClick={() => fetchNextPage()}
+            className=" px-6 h-10 bg-transparent border border-green-500"
+          >
+            {isFetchingNextPage ? "Loading..." : "More"}
+            <ChevronDown className="ml-2" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

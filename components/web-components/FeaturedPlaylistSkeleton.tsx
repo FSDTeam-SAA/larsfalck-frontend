@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-const SKELETON_CARD_COUNT = 5;
+const SKELETON_CARD_COUNT = 10;
 
 export default function FeaturedPlaylistSkeleton() {
   return (
