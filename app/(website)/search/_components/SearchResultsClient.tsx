@@ -1,10 +1,12 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 import MusicCard from "@/components/common/MusicCard";
+import { Button } from "@/components/ui/button";
 import {
   buildSearchHref,
   getTags,
@@ -12,6 +14,7 @@ import {
   type SearchAlbum,
   type SearchArtist,
   type SearchPlaylist,
+  type SearchResults,
   type SearchSong,
   type SearchType,
 } from "@/lib/search";
@@ -24,6 +27,8 @@ const tabs: Array<{ label: string; value: SearchType }> = [
   { label: "Playlists", value: "playlists" },
   { label: "Albums", value: "albums" },
 ];
+
+const searchResultsPerPage = 10;
 
 function getSongArtist(song: SearchSong) {
   return song.artists?.map((artist) => artist.name).join(", ") || "Unknown";
@@ -47,6 +52,20 @@ function formatPlaylistSongs(playlist: SearchPlaylist) {
   return `${count.toLocaleString()} ${count === 1 ? "Song" : "Songs"}`;
 }
 
+function getNextSearchPage(lastPage: SearchResults, loadedPages: number) {
+  const pagination = lastPage.paginationInfo;
+
+  if (pagination) {
+    return pagination.hasNextPage ? pagination.currentPage + 1 : undefined;
+  }
+
+  const page = lastPage.page ?? loadedPages;
+  const limit = lastPage.limit ?? searchResultsPerPage;
+  const total = lastPage.total ?? lastPage.counts?.total;
+
+  return total && page * limit < total ? page + 1 : undefined;
+}
+
 function SearchGrid({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -57,16 +76,28 @@ function SearchGrid({ children }: { children: React.ReactNode }) {
 
 function ResultSection({
   title,
+  showAllHref,
   children,
 }: {
   title: string;
+  showAllHref?: string;
   children: React.ReactNode;
 }) {
   return (
     <section className="mt-7 first:mt-0">
-      <h2 className="mb-4 text-xl font-semibold text-white sm:text-3xl">
-        {title}
-      </h2>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-xl font-semibold text-white sm:text-3xl">
+          {title}
+        </h2>
+        {showAllHref && (
+          <Link
+            href={showAllHref}
+            className="shrink-0 rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-[#CFCFCF] transition hover:border-[#00EF01] hover:text-[#00EF01]"
+          >
+            Show all
+          </Link>
+        )}
+      </div>
       {children}
     </section>
   );
@@ -88,18 +119,30 @@ export default function SearchResultsClient() {
     ? tags.length > 0
     : Boolean((query || "").trim());
   const searchKey = isTagSearch
-    ? ["search", "tags", tags.join(",")]
-    : ["search", type, query.trim()];
+    ? ["search", "tags", tags.join(","), searchResultsPerPage]
+    : ["search", type, query.trim(), searchResultsPerPage];
 
-  const { data, isPending, error } = useQuery({
+  const {
+    data,
+    isPending,
+    error,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: searchKey,
-    queryFn: () =>
+    queryFn: ({ pageParam }) =>
       isTagSearch
-        ? searchMusic({ tags })
+        ? searchMusic({ tags, page: pageParam, limit: searchResultsPerPage })
         : searchMusic({
             query,
             type,
+            page: pageParam,
+            limit: searchResultsPerPage,
           }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) =>
+      getNextSearchPage(lastPage, allPages.length),
     enabled,
     staleTime: 1000 * 60 * 5,
     retry: false,
@@ -111,12 +154,14 @@ export default function SearchResultsClient() {
     retry: false,
   });
 
-  const songs = data?.songs ?? [];
-  const artists = data?.artists ?? [];
-  const albums = data?.albums ?? [];
-  const playlists = data?.playlists ?? [];
+  const pages = data?.pages ?? [];
+  const songs = pages.flatMap((page) => page.songs ?? []);
+  const artists = pages.flatMap((page) => page.artists ?? []);
+  const albums = pages.flatMap((page) => page.albums ?? []);
+  const playlists = pages.flatMap((page) => page.playlists ?? []);
   const totalResults =
     songs.length + artists.length + albums.length + playlists.length;
+  const showSectionLinks = type === "all" && !isTagSearch;
 
   return (
     <>
@@ -198,7 +243,14 @@ export default function SearchResultsClient() {
         <>
           {(type === "all" || type === "songs" || isTagSearch) &&
             songs.length > 0 && (
-              <ResultSection title="Songs">
+              <ResultSection
+                title="Songs"
+                showAllHref={
+                  showSectionLinks
+                    ? buildSearchHref({ query, type: "songs" })
+                    : undefined
+                }
+              >
                 <SearchGrid>
                   {songs.map((song) => (
                     <MusicCard
@@ -217,61 +269,95 @@ export default function SearchResultsClient() {
           {(type === "all" || type === "artists") &&
             !isTagSearch &&
             artists.length > 0 && (
-            <ResultSection title="Artists">
-              <SearchGrid>
-                {artists.map((artist: SearchArtist) => (
-                  <MusicCard
-                    key={artist._id}
-                    href={`/single-artists/${encodeURIComponent(artist._id)}`}
-                    image={artist.image || "/artis.png"}
-                    title={artist.name}
-                    type="Artist"
-                  />
-                ))}
-              </SearchGrid>
-            </ResultSection>
-          )}
+              <ResultSection
+                title="Artists"
+                showAllHref={
+                  showSectionLinks
+                    ? buildSearchHref({ query, type: "artists" })
+                    : undefined
+                }
+              >
+                <SearchGrid>
+                  {artists.map((artist: SearchArtist) => (
+                    <MusicCard
+                      key={artist._id}
+                      href={`/single-artists/${encodeURIComponent(artist._id)}`}
+                      image={artist.image || "/artis.png"}
+                      title={artist.name}
+                      type="Artist"
+                    />
+                  ))}
+                </SearchGrid>
+              </ResultSection>
+            )}
 
           {(type === "all" || type === "playlists") &&
             !isTagSearch &&
             playlists.length > 0 && (
-            <ResultSection title="Playlists">
-              <SearchGrid>
-                {playlists.map((playlist) => (
-                  <MusicCard
-                    key={playlist._id}
-                    href={`/playlists/${encodeURIComponent(
-                      playlist._id,
-                    )}?name=${encodeURIComponent(playlist.name)}`}
-                    image={playlist.coverImage || "/albam.png"}
-                    title={playlist.name}
-                    artist={formatPlaylistSongs(playlist)}
-                    type="Playlist"
-                  />
-                ))}
-              </SearchGrid>
-            </ResultSection>
-          )}
+              <ResultSection
+                title="Playlists"
+                showAllHref={
+                  showSectionLinks
+                    ? buildSearchHref({ query, type: "playlists" })
+                    : undefined
+                }
+              >
+                <SearchGrid>
+                  {playlists.map((playlist) => (
+                    <MusicCard
+                      key={playlist._id}
+                      href={`/playlists/${encodeURIComponent(
+                        playlist._id,
+                      )}?name=${encodeURIComponent(playlist.name)}`}
+                      image={playlist.coverImage || "/albam.png"}
+                      title={playlist.name}
+                      artist={formatPlaylistSongs(playlist)}
+                      type="Playlist"
+                    />
+                  ))}
+                </SearchGrid>
+              </ResultSection>
+            )}
 
           {(type === "all" || type === "albums") &&
             !isTagSearch &&
             albums.length > 0 && (
-            <ResultSection title="Albums">
-              <SearchGrid>
-                {albums.map((album) => (
-                  <MusicCard
-                    key={album._id}
-                    href={`/albums/${encodeURIComponent(album._id)}`}
-                    image={album.coverImage || "/albam.png"}
-                    title={album.name}
-                    artist={getAlbumArtist(album)}
-                    type="Album"
-                  />
-                ))}
-              </SearchGrid>
-            </ResultSection>
-          )}
+              <ResultSection
+                title="Albums"
+                showAllHref={
+                  showSectionLinks
+                    ? buildSearchHref({ query, type: "albums" })
+                    : undefined
+                }
+              >
+                <SearchGrid>
+                  {albums.map((album) => (
+                    <MusicCard
+                      key={album._id}
+                      href={`/albums/${encodeURIComponent(album._id)}`}
+                      image={album.coverImage || "/albam.png"}
+                      title={album.name}
+                      artist={getAlbumArtist(album)}
+                      type="Album"
+                    />
+                  ))}
+                </SearchGrid>
+              </ResultSection>
+            )}
 
+          {hasNextPage && (
+            <div className="mt-8 flex justify-center">
+              <Button
+                type="button"
+                disabled={isFetchingNextPage}
+                onClick={() => fetchNextPage()}
+                className="h-10 border border-green-500 bg-transparent px-6"
+              >
+                {isFetchingNextPage ? "Loading..." : "More"}
+                <ChevronDown className="ml-2" />
+              </Button>
+            </div>
+          )}
         </>
       )}
     </>
