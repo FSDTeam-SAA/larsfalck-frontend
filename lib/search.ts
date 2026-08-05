@@ -64,6 +64,16 @@ export type SearchResults = {
   albums?: SearchAlbum[];
   playlists?: SearchPlaylist[];
   matchedTags?: string[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  paginationInfo?: {
+    currentPage: number;
+    totalPages: number;
+    totalData: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
   counts?: {
     songs?: number;
     artists?: number;
@@ -87,6 +97,8 @@ type SearchParams = {
   query?: string | null;
   type?: SearchType;
   tags?: Array<string | null | undefined>;
+  page?: number;
+  limit?: number;
 };
 
 function normalizeText(value: string | null | undefined) {
@@ -117,11 +129,16 @@ export async function searchMusic({
   query = "",
   type = "all",
   tags = [],
+  page,
+  limit,
 }: SearchParams): Promise<SearchResults> {
   const trimmedQuery = normalizeText(query).trim();
   const cleanTags = tags.filter((tag): tag is string => Boolean(tag));
   let path = "/search";
   const params: Record<string, string> = {};
+
+  if (page) params.page = String(page);
+  if (limit) params.limit = String(limit);
 
   if (cleanTags.length > 0) {
     path = "/search/tags";
