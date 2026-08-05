@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-const SKELETON_CARD_COUNT = 10;
+const SKELETON_CARD_COUNT = 12;
 
 export default function ArtistsSkeleton() {
   return (

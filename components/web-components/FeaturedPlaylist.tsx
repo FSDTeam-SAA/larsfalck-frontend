@@ -1,9 +1,11 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 
 import MusicCard from "@/components/common/MusicCard";
+import { Button } from "@/components/ui/button";
 
 import FeaturedPlaylistSkeleton from "./FeaturedPlaylistSkeleton";
 
@@ -15,17 +17,28 @@ type PublicPlaylist = {
   createdAt: string;
 };
 
+type PaginationInfo = {
+  currentPage: number;
+  totalPages: number;
+  totalData: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+};
+
 type PublicPlaylistsResponse = {
   success: boolean;
   message: string;
   data?: {
     playlists?: PublicPlaylist[];
+    paginationInfo?: PaginationInfo;
   };
 };
 
-async function getPublicPlaylists() {
+const playlistsPerPage = 10;
+
+async function getPublicPlaylists(page: number) {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/playlist/public`,
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/playlist/public?page=${page}&limit=${playlistsPerPage}`,
   );
   const result = (await response.json()) as PublicPlaylistsResponse;
 
@@ -33,7 +46,7 @@ async function getPublicPlaylists() {
     throw new Error(result.message || "Could not load featured playlists");
   }
 
-  return Array.isArray(result.data?.playlists) ? result.data.playlists : [];
+  return result;
 }
 
 function formatSongCount(count: number) {
@@ -45,12 +58,29 @@ type FeaturedPlaylistProps = {
 };
 
 export function FeaturedPlaylist({ showAll = false }: FeaturedPlaylistProps) {
-  const { data: playlists = [], isPending, error } = useQuery({
-    queryKey: ["public-playlists"],
-    queryFn: getPublicPlaylists,
+  const {
+    data,
+    isPending,
+    error,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["public-playlists", "infinite"],
+    queryFn: ({ pageParam }) => getPublicPlaylists(pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage.data?.paginationInfo;
+
+      return pagination?.hasNextPage ? pagination.currentPage + 1 : undefined;
+    },
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
+  const playlists =
+    data?.pages.flatMap((page) =>
+      Array.isArray(page.data?.playlists) ? page.data.playlists : [],
+    ) ?? [];
   const visiblePlaylists = showAll ? playlists : playlists.slice(0, 5);
 
   if (isPending) {
@@ -80,20 +110,36 @@ export function FeaturedPlaylist({ showAll = false }: FeaturedPlaylistProps) {
             : "Unable to load featured playlists."}
         </p>
       ) : playlists.length > 0 ? (
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {visiblePlaylists.map((playlist) => (
-            <MusicCard
-              key={playlist._id}
-              href={`/playlists/${playlist._id}?name=${encodeURIComponent(
-                playlist.name,
-              )}`}
-              image={playlist.coverImage || "/albam.png"}
-              title={playlist.name}
-              artist={formatSongCount(playlist.songs.length)}
-              type="Playlist"
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {visiblePlaylists.map((playlist) => (
+              <MusicCard
+                key={playlist._id}
+                href={`/playlists/${playlist._id}?name=${encodeURIComponent(
+                  playlist.name,
+                )}`}
+                image={playlist.coverImage || "/albam.png"}
+                title={playlist.name}
+                artist={formatSongCount(playlist.songs.length)}
+                type="Playlist"
+              />
+            ))}
+          </div>
+
+          {showAll && hasNextPage && (
+            <div className="mt-8 flex justify-center">
+              <Button
+                type="button"
+                disabled={isFetchingNextPage}
+                onClick={() => fetchNextPage()}
+                className="h-10 border border-green-500 bg-transparent px-6"
+              >
+                {isFetchingNextPage ? "Loading..." : "More"}
+                <ChevronDown className="ml-2" />
+              </Button>
+            </div>
+          )}
+        </>
       ) : (
         <p className="rounded-lg bg-white/5 px-4 py-8 text-center text-sm text-[#A8A8A8]">
           No featured playlists found.
