@@ -28,7 +28,8 @@ const tabs: Array<{ label: string; value: SearchType }> = [
   { label: "Albums", value: "albums" },
 ];
 
-const searchResultsPerPage = 10;
+const allSearchResultsPerPage = 5;
+const tabSearchResultsPerPage = 10;
 
 function getSongArtist(song: SearchSong) {
   return song.artists?.map((artist) => artist.name).join(", ") || "Unknown";
@@ -52,7 +53,11 @@ function formatPlaylistSongs(playlist: SearchPlaylist) {
   return `${count.toLocaleString()} ${count === 1 ? "Song" : "Songs"}`;
 }
 
-function getNextSearchPage(lastPage: SearchResults, loadedPages: number) {
+function getNextSearchPage(
+  lastPage: SearchResults,
+  loadedPages: number,
+  fallbackLimit: number,
+) {
   const pagination = lastPage.paginationInfo;
 
   if (pagination) {
@@ -60,7 +65,7 @@ function getNextSearchPage(lastPage: SearchResults, loadedPages: number) {
   }
 
   const page = lastPage.page ?? loadedPages;
-  const limit = lastPage.limit ?? searchResultsPerPage;
+  const limit = lastPage.limit ?? fallbackLimit;
   const total = lastPage.total ?? lastPage.counts?.total;
 
   return total && page * limit < total ? page + 1 : undefined;
@@ -115,6 +120,8 @@ export default function SearchResultsClient() {
     .map((tag) => tag.trim())
     .filter(Boolean);
   const isTagSearch = tags.length > 0;
+  const searchResultsPerPage =
+    type === "all" ? allSearchResultsPerPage : tabSearchResultsPerPage;
   const enabled = isTagSearch
     ? tags.length > 0
     : Boolean((query || "").trim());
@@ -142,7 +149,7 @@ export default function SearchResultsClient() {
           }),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
-      getNextSearchPage(lastPage, allPages.length),
+      getNextSearchPage(lastPage, allPages.length, searchResultsPerPage),
     enabled,
     staleTime: 1000 * 60 * 5,
     retry: false,
@@ -162,6 +169,7 @@ export default function SearchResultsClient() {
   const totalResults =
     songs.length + artists.length + albums.length + playlists.length;
   const showSectionLinks = type === "all" && !isTagSearch;
+  const showMoreButton = type !== "all" && !isTagSearch && hasNextPage;
 
   return (
     <>
@@ -345,7 +353,7 @@ export default function SearchResultsClient() {
               </ResultSection>
             )}
 
-          {hasNextPage && (
+          {showMoreButton && (
             <div className="mt-8 flex justify-center">
               <Button
                 type="button"
