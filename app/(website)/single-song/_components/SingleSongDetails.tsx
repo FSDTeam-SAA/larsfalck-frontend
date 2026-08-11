@@ -291,10 +291,10 @@ export default function SingleSongDetails({ songId }: SingleSongDetailsProps) {
           />
         </div>
 
-        <div className="hidden text-right text-xs leading-tight text-[#A8A8A8] sm:block">
+        <div className="hidden text-right text-sm leading-tight text-[#A8A8A8] sm:block">
           {/* <p>{formatDate(song.releaseDate || song.createdAt)}</p> */}
-          <p>© 2026 Royalty Free</p>
-          <p>© 2026 Lars Falck under exclusive license to BeatBoks Music Group</p>
+          <p>Ⓟ 2026 Royalty Free</p>
+          <p>Ⓟ 2026 Lars Falck under exclusive license to BeatBoks Music Group</p>
           {/* <p>
             &copy; {year || new Date().getFullYear()} {artists}
           </p> */}
