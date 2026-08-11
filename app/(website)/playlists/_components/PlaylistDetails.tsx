@@ -633,6 +633,7 @@ export function PlaylistDetails({
               <span aria-hidden="true"> · </span>
               {metadata}
             </p>
+            <p className="mt-4">{playlist?.description}</p>
           </div>
         </div>
       </header>
